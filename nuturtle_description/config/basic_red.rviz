@@ -59,7 +59,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /purple/robot_description
+        Value: /red/robot_description
       Enabled: true
       Links:
         All Links Enabled: true
@@ -101,7 +101,7 @@ Visualization Manager:
         Inertia: false
         Mass: false
       Name: RobotModel
-      TF Prefix: "purple"
+      TF Prefix: "red"
       Update Interval: 0
       Value: true
       Visual Enabled: true
@@ -142,7 +142,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: purple/base_link
+    Fixed Frame: red/base_link
     Frame Rate: 30
   Name: root
   Tools:

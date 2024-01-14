@@ -30,6 +30,10 @@
     <color rgba="0 0 0.8 1.0"/>
   </material>
 
+  <material name="dark">
+    <color rgba="0.1 0.1 0.1 1.0"/>
+  </material>
+
   <link name="base_footprint"/>
 
   <joint name="base_joint" type="fixed">
@@ -76,7 +80,7 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/left_tire.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="$(arg color)"/>
+      <material name="dark"/>
     </visual>
 
     <collision>
@@ -108,7 +112,7 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/right_tire.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="$(arg color)"/>
+      <material name="dark"/>
     </visual>
 
     <collision>
@@ -170,7 +174,7 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/lds.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="$(arg color)"/>
+      <material name="dark"/>
     </visual>
 
     <collision>
