@@ -23,4 +23,12 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+install(DIRECTORY
+  launch
+  config
+  urdf
+  meshes
+  DESTINATION share/nuturtle_description/
+)
+
 ament_package()
