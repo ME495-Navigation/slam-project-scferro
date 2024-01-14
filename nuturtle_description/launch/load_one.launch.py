@@ -12,10 +12,13 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(name="use_jsp", default_value="true",
-                              description="gui (default): use jsp_gui, jsp: use joint_state_publisher, none: no joint states published"),
+                              description="true (default): use joint_state_publisher, false: no joint states published"),
 
         DeclareLaunchArgument(name="use_rviz", default_value="true",
                               description="true (default): start rviz, otherwise don't start rviz"),
+
+        DeclareLaunchArgument(name="color", default_value="purple",
+                              description="sets the color of the robot, options: purple (default), red, green, blue"),
 
         Node(package="joint_state_publisher",
              executable="joint_state_publisher",
