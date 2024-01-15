@@ -11,18 +11,22 @@ from launch_ros.substitutions import FindPackageShare
 
 def generate_launch_description():
     return LaunchDescription([
+        # Declare input argument for using jsp
         DeclareLaunchArgument(name="use_jsp", default_value="true",
                               choices=["true", "false"],
                               description="true (default): use joint_state_publisher, false: no joint states published"),
 
+        # Declare input argument for using rviz
         DeclareLaunchArgument(name="use_rviz", default_value="true",
                               choices=["true", "false" ],
                               description="true (default): start rviz, otherwise don't start rviz"),
 
+        # Declare input argument for robot color
         DeclareLaunchArgument(name="color", default_value="purple",
                               choices=["purple", "red", "green", "blue"],
                               description="sets the color of the robot, options: purple (default), red, green, blue"),
 
+        # Store robot color as LaunchConfiguration 
         SetLaunchConfiguration(name="rviz_color", 
                                value=[FindPackageShare("nuturtle_description"),
                                       TextSubstitution(text="/config/basic_"),
@@ -30,11 +34,13 @@ def generate_launch_description():
                                       TextSubstitution(text=".rviz")]
                                ),        
 
+        # Launch joint state publisher
         Node(package="joint_state_publisher",
             executable="joint_state_publisher",
             namespace=LaunchConfiguration("color"),
             condition= LaunchConfigurationEquals("use_jsp", "true"),
             ),
+        # Launch robot state publisher
         Node(
             package="robot_state_publisher",
             executable="robot_state_publisher",
@@ -48,6 +54,7 @@ def generate_launch_description():
                               " color:=", LaunchConfiguration("color")])}
             ],
             ),
+        # Launch rviz
         Node(
             package="rviz2",
             executable="rviz2",
