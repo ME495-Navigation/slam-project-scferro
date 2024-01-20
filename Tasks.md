@@ -7,4 +7,5 @@ Task A.4 - Create color prefix for displaying multiple robots: COMPLETE
 Task A.5 - Create launch file to load multiple robots: IN PROGRESS
 Task A.6 - Create README for nuturtle_description package: IN PROGRESS
 
-Task B.1 - Geometry primitives: IN PROGRESS
+Task B.1 - Geometry primitives: COMPLETE
+Task B.2 - Geometry unit tests: IN PROGRESS

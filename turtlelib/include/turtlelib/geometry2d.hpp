@@ -21,6 +21,11 @@ namespace turtlelib
     /// if given a compile-time constant as input
     constexpr bool almost_equal(double d1, double d2, double epsilon=1.0e-12)
     {
+        if (abs(d1-d2) < epsilon) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /// \brief convert degrees to radians
@@ -28,9 +33,7 @@ namespace turtlelib
     /// \returns radians
     constexpr double deg2rad(double deg)
     {
-        double rad;
-        rad = deg / 180 * PI;
-        return rad;
+        return deg / 180 * PI;
     }
 
     /// \brief convert radians to degrees
@@ -38,9 +41,7 @@ namespace turtlelib
     /// \returns the angle in degrees
     constexpr double rad2deg(double rad)
     {
-        double deg
-        deg = rad / PI * 180
-        return deg
+        return rad / PI * 180;
     }
 
     /// \brief wrap an angle to (-PI, PI]
@@ -52,13 +53,21 @@ namespace turtlelib
     /// You should write at least one more test for each function
     /// You should also purposely (and temporarily) make one of these tests fail
     /// just to see what happens
-    static_assert(almost_equal(0, 0), "is_zero failed");
+    static_assert(almost_equal(0, 0), "almost_equal failed");
+
+    static_assert(almost_equal(0.0, 0.9e-12), "almost_equal failed");
 
     static_assert(almost_equal(deg2rad(0.0), 0.0), "deg2rad failed");
 
-    static_assert(almost_equal(rad2deg(0.0), 0.0), "rad2deg) failed");
+    static_assert(almost_equal(deg2rad(180.0), PI), "deg2rad failed");
+
+    static_assert(almost_equal(rad2deg(0.0), 0.0), "rad2deg failed");
+
+    static_assert(almost_equal(rad2deg(PI), 180.0), "rad2deg failed");
 
     static_assert(almost_equal(deg2rad(rad2deg(2.1)), 2.1), "deg2rad failed");
+
+    static_assert(almost_equal(rad2deg(deg2rad(0.0)), 0.0), "rad2deg failed");
 
     /// \brief a 2-Dimensional Point
     struct Point2D
