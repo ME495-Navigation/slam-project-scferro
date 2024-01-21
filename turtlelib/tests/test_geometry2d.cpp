@@ -75,7 +75,7 @@ TEST_CASE("Output stream operator for Point2D", "[operator<< Vector2D]") // Step
     REQUIRE(oss.str() == "[2.5 3.7]");
 }
 
-TEST_CASE("Input stream operator for Point2D", "[operator>> Vector2D]") // Stephen Ferro
+TEST_CASE("Input stream operator for Vector2D", "[operator>> Vector2D]") // Stephen Ferro
 {
     std::istringstream iss("[2.5 3.7]");
     Vector2D vector;
@@ -86,7 +86,7 @@ TEST_CASE("Input stream operator for Point2D", "[operator>> Vector2D]") // Steph
     REQUIRE(vector.y == 3.7);
 }
 
-TEST_CASE("Input stream operator for Point2D", "[operator>> Vector2D]") // Stephen Ferro
+TEST_CASE("Input stream operator for Vector2D", "[operator>> Vector2D]") // Stephen Ferro
 {
     std::istringstream iss("2.5 3.7");
     Vector2D vector;

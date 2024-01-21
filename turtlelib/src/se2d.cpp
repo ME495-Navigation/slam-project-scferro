@@ -45,7 +45,13 @@ namespace turtlelib {
     }
 
     Vector2D Transform2D::operator()(Vector2D v) const {
-        return {p.x * cos(rot) - p.y * sin(rot), p.x * sin(rot) + p.y * cos(rot)}; // translated vector is the same magnitude as original vector, just rotated
+        double new_x, new_y, multiplier;
+        new_x = p.x * cos(rot) - p.y * sin(rot) + trans.x;
+        new_y = p.x * sin(rot) + p.y * cos(rot) + trans.y;
+        multiplier = sqrt(pow(v.x, 2.0) + pow(v.y, 2.0)) / sqrt(pow(new_x, 2.0) + pow(new_y, 2.0))
+        new_x = new_x * multiplier
+        new_y = new_y * multiplier
+        return {new_x, new_y}; // transformed vector is the same magnitude as original vector, but rotated
     }
 
     Twist2D Transform2D::operator()(Twist2D v) const {
