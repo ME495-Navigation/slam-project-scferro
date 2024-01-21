@@ -16,14 +16,17 @@ target_compile_options(turtlelib PUBLIC -Wall -Wextra -pedantic)
 # Enable c++17 support.
 target_compile_features(turtlelib PUBLIC cxx_std_17)
 
-# Create an executable from the following source code files
-# The Name of the executable creates a cmake "target"
+# We use the catch2 unit testing framework
+find_package(Catch2 3 REQUIRED)
 
 # install the include files by copying the whole include directory
 install(DIRECTORY include/turtlelib DESTINATION include)
 
 # Create a CMake Exported Target containing the lib and exe.
-install(TARGETS Name turtlelib EXPORT turtlelib-targets)
+# Also create CMake Export called projet_name-targets
+# The CMake Export contains files that allow other CMake projects
+# to find this project. It must be installed separately.
+install(TARGETS frame_main turtlelib EXPORT turtlelib-targets)
 
 # The project_name-targets created by install(TARGETS) needs to be installed.
 # install(EXPORT ...) will generate a file called project_name-config.cmake

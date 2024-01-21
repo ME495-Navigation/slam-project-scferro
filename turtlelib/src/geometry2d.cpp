@@ -7,8 +7,8 @@
 namespace turtlelib {
 
     double normalize_angle(double rad) {
-        while (rad >= 2*PI) rad += -2*PI;
-        while (rad < 0) rad += 2*PI;
+        while (rad >= PI) rad += -2.0*PI;
+        while (rad < -PI) rad += 2.0*PI;
         return rad;
     }
 

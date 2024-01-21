@@ -33,7 +33,7 @@ namespace turtlelib
     /// \returns radians
     constexpr double deg2rad(double deg)
     {
-        return deg / 180 * PI;
+        return deg / 180.0 * PI;
     }
 
     /// \brief convert radians to degrees
@@ -41,7 +41,7 @@ namespace turtlelib
     /// \returns the angle in degrees
     constexpr double rad2deg(double rad)
     {
-        return rad / PI * 180;
+        return rad / PI * 180.0;
     }
 
     /// \brief wrap an angle to (-PI, PI]
