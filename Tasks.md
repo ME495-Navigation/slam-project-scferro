@@ -8,4 +8,6 @@ Task A.5 - Create launch file to load multiple robots: IN PROGRESS
 Task A.6 - Create README for nuturtle_description package: IN PROGRESS
 
 Task B.1 - Geometry primitives: COMPLETE
-Task B.2 - Geometry unit tests: IN PROGRESS
+Task B.2 - Geometry unit tests: COMPLETE
+Task B.3 - se2d geometry: IN PROGRESS
+Task B.4 - se2d geometry unit tests: IN PROGRESS
