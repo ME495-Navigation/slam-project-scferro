@@ -12,3 +12,5 @@ Task B.2 - Geometry unit tests: COMPLETE
 Task B.3 - se2d geometry: COMPLETE
 Task B.4 - se2d geometry unit tests: IN PROGRESS
 Task B.5 - Visualization: IN PROGRESS
+
+Task C.1 - Create nusim package: IN PROGRESS

@@ -7,8 +7,8 @@
 namespace turtlelib {
 
     double normalize_angle(double rad) {
-        while (rad >= PI) rad += -2.0*PI;
-        while (rad < -PI) rad += 2.0*PI;
+        while (rad > PI) rad += -2.0*PI;
+        while (rad <= -PI) rad += 2.0*PI;
         return rad;
     }
 
@@ -18,8 +18,8 @@ namespace turtlelib {
     }
 
     std::istream & operator>>(std::istream & is, Point2D & p) {
-        const auto first_char = is.peek()
-        if (first_char == "[") {
+        const auto first_char = is.peek();
+        if (first_char == '[') {
             is.get();
             is >> p.x;
             is >> p.y;
@@ -29,7 +29,7 @@ namespace turtlelib {
             is >> p.y;
         }
 
-        is.ignore(50, "\n")
+        is.ignore(50, '\n');
         return is;
     }
 
@@ -53,8 +53,8 @@ namespace turtlelib {
     }
 
     std::istream & operator>>(std::istream & is, Vector2D & v) {
-        const auto first_char = is.peek()
-        if (first_char == "[") {
+        const auto first_char = is.peek();
+        if (first_char == '[') {
             is.get();
             is >> v.x;
             is >> v.y;
@@ -64,7 +64,7 @@ namespace turtlelib {
             is >> v.y;
         }
 
-        is.ignore(50, "\n")
+        is.ignore(50, '\n');
         return is;
     }
 

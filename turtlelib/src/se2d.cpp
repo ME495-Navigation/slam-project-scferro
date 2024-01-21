@@ -2,29 +2,31 @@
 #include <cmath>
 #include <iostream>
 #include "turtlelib/se2d.hpp"
+#include "turtlelib/geometry2d.hpp"
 
 
 namespace turtlelib {
 
     std::ostream & operator<<(std::ostream & os, const Twist2D & tw) {
-        os << "[" << tw.w << " " << tw.x << " " << tw.y << "]"; // Output format: [x y]
+        os << "[" << tw.omega << " " << tw.x << " " << tw.y << "]"; // Output format: [x y]
         return os;
     }
 
     std::istream & operator>>(std::istream & is, Twist2D & tw) {
-        const auto first_char = is.peek()
-        if (first_char == "[") {
+        const auto first_char = is.peek();
+        if (first_char == '[') {
             is.get();
-            is >> tw.w;
+            is >> tw.omega;
             is >> tw.x;
             is >> tw.y;
             is.get();
         } else {
+            is >> tw.omega;
             is >> tw.x;
             is >> tw.y;
         }
 
-        is.ignore(50, "\n")
+        is.ignore(50, '\n');
         return is;
     }
 
@@ -46,11 +48,11 @@ namespace turtlelib {
 
     Vector2D Transform2D::operator()(Vector2D v) const {
         double new_x, new_y, multiplier;
-        new_x = p.x * cos(rot) - p.y * sin(rot) + trans.x;
-        new_y = p.x * sin(rot) + p.y * cos(rot) + trans.y;
-        multiplier = sqrt(pow(v.x, 2.0) + pow(v.y, 2.0)) / sqrt(pow(new_x, 2.0) + pow(new_y, 2.0))
-        new_x = new_x * multiplier
-        new_y = new_y * multiplier
+        new_x = v.x * cos(rot) - v.y * sin(rot) + trans.x;
+        new_y = v.x * sin(rot) + v.y * cos(rot) + trans.y;
+        multiplier = sqrt(pow(v.x, 2.0) + pow(v.y, 2.0)) / sqrt(pow(new_x, 2.0) + pow(new_y, 2.0));
+        new_x = new_x * multiplier;
+        new_y = new_y * multiplier;
         return {new_x, new_y}; // transformed vector is the same magnitude as original vector, but rotated
     }
 
@@ -82,12 +84,16 @@ namespace turtlelib {
     }
 
     std::istream & operator>>(std::istream & is, Transform2D & tf) {
-        const auto first_char = is.peek()
-        if (first_char == "d") {
+        std::string str1, str2, str3;
+        Vector2D trans;
+        double rot;
+        const auto first_char = is.peek();
+        if (first_char == 'd') {
             is >> str1;
             is >> rot;
             is >> str2;
             is >> trans.x;
+            is >> str3;
             is >> trans.y;
             is.get();
         } else {
@@ -96,8 +102,8 @@ namespace turtlelib {
             is >> trans.y;
         }
 
-        is.ignore(50, "\n")
-        rot = deg2rad(rot)
+        is.ignore(50, '\n');
+        rot = deg2rad(rot);
         tf = Transform2D{trans, rot}; 
 
         return is;

@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include "turtlelib/geometry2d.hpp"
+#include <sstream>
 
 using turtlelib::Vector2D;
 using turtlelib::Point2D;
@@ -55,17 +56,6 @@ TEST_CASE("Input stream operator for Point2D", "[operator>> Point2D]") // Stephe
     REQUIRE(point.y == 3.7);
 }
 
-TEST_CASE("Input stream operator for Point2D", "[operator>> Point2D]") // Stephen Ferro
-{
-    std::istringstream iss("2.5 3.7");
-    Point2D point;
-
-    iss >> point;
-
-    REQUIRE(point.x == 2.5);
-    REQUIRE(point.y == 3.7);
-}
-
 TEST_CASE("Output stream operator for Point2D", "[operator<< Vector2D]") // Stephen Ferro
 {
     Vector2D vector{2.5, 3.7};
@@ -78,17 +68,6 @@ TEST_CASE("Output stream operator for Point2D", "[operator<< Vector2D]") // Step
 TEST_CASE("Input stream operator for Vector2D", "[operator>> Vector2D]") // Stephen Ferro
 {
     std::istringstream iss("[2.5 3.7]");
-    Vector2D vector;
-
-    iss >> vector;
-
-    REQUIRE(vector.x == 2.5);
-    REQUIRE(vector.y == 3.7);
-}
-
-TEST_CASE("Input stream operator for Vector2D", "[operator>> Vector2D]") // Stephen Ferro
-{
-    std::istringstream iss("2.5 3.7");
     Vector2D vector;
 
     iss >> vector;

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 project(turtlelib)
 
 # Create libraries
-add_library(turtlelib src/geometry2d.cpp )
+add_library(turtlelib src/geometry2d.cpp src/se2d.cpp )
 
 # Use target_include_directories so that #include"mylibrary/header.hpp" works
 target_include_directories(turtlelib
@@ -16,11 +16,24 @@ target_compile_options(turtlelib PUBLIC -Wall -Wextra -pedantic)
 # Enable c++17 support.
 target_compile_features(turtlelib PUBLIC cxx_std_17)
 
-# We use the catch2 unit testing framework
+# Catch2 unit testing framework
 find_package(Catch2 3 REQUIRED)
+include(CTest)
+enable_testing()
+add_executable(geometry2d_test tests/test_geometry2d.cpp)
+add_executable(se2d_test tests/test_se2d.cpp)
+target_link_libraries(geometry2d_test turtlelib Catch2::Catch2WithMain)
+target_link_libraries(se2d_test turtlelib Catch2::Catch2WithMain)
+
+add_test(NAME Test_Geometry2D COMMAND geometry2d_test)
+add_test(NAME Test_SE2D COMMAND se2d_test)
 
 # install the include files by copying the whole include directory
 install(DIRECTORY include/turtlelib DESTINATION include)
+
+# create the executable target and link with turtlelib 
+add_executable(frame_main src/frame_main.cpp)
+target_link_libraries(frame_main turtlelib)
 
 # Create a CMake Exported Target containing the lib and exe.
 # Also create CMake Export called projet_name-targets

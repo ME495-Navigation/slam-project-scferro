@@ -3,7 +3,8 @@
 /// \file
 /// \brief Two-dimensional geometric primitives.
 
-
+#include <cstdio>
+#include <cmath>
 #include <iosfwd> // contains forward definitions for iostream objects
 namespace turtlelib
 {
@@ -44,7 +45,7 @@ namespace turtlelib
         return rad / PI * 180.0;
     }
 
-    /// \brief wrap an angle to (-PI, PI]
+    /// \brief wrap an angle to (-PI, PI)
     /// \param rad (angle in radians)
     /// \return an angle equivalent to rad but in the range (-PI, PI]
     double normalize_angle(double rad);
