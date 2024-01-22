@@ -7,9 +7,11 @@
 #include <random>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/UInt64.hpp"
-#include "std_srvs/srv/Empty.hpp
+#include "std_msgs/msg/u_int64.hpp"
+#include "std_srvs/srv/empty.hpp
 #include "geometry_msgs/msg/transform_stamped.hpp"
+#include "visualization_msgs/msg/marker_array.hpp"
+#include "visualization_msgs/msg/marker.hpp"
 #include "nusim/srv/teleport.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_ros/transform_broadcaster.h"
@@ -21,18 +23,27 @@ public:
     {
         // Define parameters and default values
         declare_parameter("rate", 200);
-        declare_parameter("x0", 0.0);
-        declare_parameter("y0", 0.0);
+        declare_parameter("x0", 10.0);
+        declare_parameter("y0", 10.0);
         declare_parameter("theta0", 0.0);
+        declare_parameter("arena_x_length", 0.0);
+        declare_parameter("arena_y_length", 0.0);
 
         // Define parameter variables
         int rate = get_parameter("rate").as_int();
         double x0 = get_parameter("x0").as_double();
         double y0 = get_parameter("y0").as_double();
         double theta0 = get_parameter("theta0").as_double();
+        double arena_x_length = get_parameter("arena_x_length").as_double();
+        double arena_y_length = get_parameter("arena_y_length").as_double();
+
+        // Initialize groundtruth position variables
+        double x_gt, y_gt, theta_gt;
 
         // Publishers
         timestep_publisher = create_publisher<std_msgs::msg::UInt64>("~/timestep", 10);
+        obstacle_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/obstacles", 10);
+        walls_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", 10);
 
         // Transform broadcaster
         tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -51,9 +62,6 @@ public:
 
 private:
 
-    // Initialize groundtruth position variables
-    double x_gt, y_gt, theta_gt;
-
     /// \brief The main timer callback function, publishes the current timestep, broadcasts groundtruth transform
     void timerCallback()
     {
@@ -64,7 +72,7 @@ private:
         // Update the timestep
         message.data = timestep_++;
 
-        // Publish transforms
+        // Publish gt transforms
         geometry_msgs::msg::TransformStamped tf;
         tf.header.stamp = current_time;
 
@@ -83,7 +91,9 @@ private:
         tf.transform.rotation.w = quaternion.w();
 
         tf_broadcaster->sendTransform(tf);
-        
+
+        // Publish walls
+        publish_walls();
     }
 
     /// \brief Reset the simulation
@@ -109,6 +119,63 @@ private:
         x_gt = request->x;
         y_gt = request->y;
         theta_gt = request->theta;
+    }
+
+    /// @brief Publish wall marker locations
+    void publish_walls()
+    {
+        visualization_msgs::msg::MarkerArray walls;
+
+        visualization_msgs::msg::Marker marker1, marker2, marker3, marker4;
+        walls.markers.push_back(marker1);
+        walls.markers.push_back(marker2);
+        walls.markers.push_back(marker3);
+        walls.markers.push_back(marker4);
+
+        for (int i = 0; i < 4; i++) {
+        walls.markers.at(i).header.stamp = current_time;
+        walls.markers.at(i).header.frame_id = "nusim/world";
+        walls.markers.at(i).id = i;
+        walls.markers.at(i).type = 1;
+        walls.markers.at(i).action = 0;
+
+        // set color
+        walls.markers.at(i).color.r = 1.0;
+        walls.markers.at(i).color.g = 0.0;
+        walls.markers.at(i).color.b = 0.0;
+        walls.markers.at(i).color.a = 1.0;
+
+        // set height to 0.25
+        walls.markers.at(i).scale.x = 0.0;
+        walls.markers.at(i).scale.y = 0.0;
+        walls.markers.at(i).scale.z = 0.25;
+
+        // set height of marker midpoint to 0.25/2
+        walls.markers.at(i).pose.position.x = 0.0;
+        walls.markers.at(i).pose.position.y = 0.0;
+        walls.markers.at(i).pose.position.z = 0.125;
+        }
+
+        const auto thiccness = 0.2;
+
+        // Set dimensions and positions of walls
+        walls.markers.at(0).scale.x = thiccness;
+        walls.markers.at(1).scale.x = arena_x_length + 2 * thiccness;
+        walls.markers.at(2).scale.x = wall_thickness;
+        walls.markers.at(3).scale.x = arena_x_length + 2 * thiccness;
+
+        walls.markers.at(0).scale.y = arena_y_length + 2 * thiccness;
+        walls.markers.at(1).scale.y = thiccness;
+        walls.markers.at(2).scale.y = arena_y_length + 2 * thiccness;
+        walls.markers.at(3).scale.y = thiccness;
+
+        walls.markers.at(0).pose.position.x = 0.5 * (arena_x_length + thiccness);
+        walls.markers.at(1).pose.position.y = 0.5 * (arena_y_length + thiccness);
+        walls.markers.at(2).pose.position.x = -0.5 * (arena_x_length + thiccness);
+        walls.markers.at(3).pose.position.y = -0.5 * (arena_y_length + thiccness);
+
+        // Publish wall markers
+        walls_publisher->publish(markers);
     }
 };
 

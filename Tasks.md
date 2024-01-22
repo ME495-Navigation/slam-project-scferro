@@ -16,4 +16,5 @@ Task B.5 - Visualization: IN PROGRESS
 Task C.1 - Create nusim package: COMPLETE
 Task C.2 - Add simulation node: COMPLETE
 Task C.3 - Add simulated turtle: COMPLETE
-Task C.4 - Add walls: IN PROGRESS
+Task C.4 - Add walls: COMPLETE
+Task C.5 - Add obstacles: IN PROGRESS
