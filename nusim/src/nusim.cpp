@@ -49,11 +49,11 @@ public:
   {
     // Parameters and default values
     declare_parameter("rate", 200);
-    declare_parameter("x0", 10.0);
-    declare_parameter("y0", 10.0);
+    declare_parameter("x0", 0.0);
+    declare_parameter("y0", 0.0);
     declare_parameter("theta0", 0.0);
-    declare_parameter("arena_x_length", 0.0);
-    declare_parameter("arena_y_length", 0.0);
+    declare_parameter("arena_x_length", 10.0);
+    declare_parameter("arena_y_length", 10.0);
     declare_parameter("obstacles_x", std::vector<double>{});
     declare_parameter("obstacles_y", std::vector<double>{});
     declare_parameter("obstacles_radius", 0.038);
@@ -86,9 +86,15 @@ public:
       std::bind(&Nusim::teleport_callback, this, std::placeholders::_1, std::placeholders::_2));
 
     // Main timer
-    timer = this->create_wall_timer(
-      std::chrono::milliseconds(1000 / rate),
-      std::bind(&Nusim::timerCallback, this));
+    int cycle_time = 1000.0 / rate;
+    main_timer = this->create_wall_timer(
+      std::chrono::milliseconds(cycle_time),
+      std::bind(&Nusim::timer_callback, this));
+
+    // Slow timer
+    slow_timer = this->create_wall_timer(
+      std::chrono::milliseconds(1000),
+      std::bind(&Nusim::slow_timer_callback, this));
   }
 
 private:
@@ -106,7 +112,8 @@ private:
   double x_gt, y_gt, theta_gt;
 
   // Create ROS publishers, timers, broadcasters, etc.
-  rclcpp::TimerBase::SharedPtr timer;
+  rclcpp::TimerBase::SharedPtr main_timer;
+  rclcpp::TimerBase::SharedPtr slow_timer;
   rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_publisher;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstacle_publisher;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr walls_publisher;
@@ -115,7 +122,7 @@ private:
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
 
   /// \brief The main timer callback function, publishes the current timestep, broadcasts groundtruth transform
-  void timerCallback()
+  void timer_callback()
   {
 
     // Publish the current timestep
@@ -146,11 +153,18 @@ private:
     // Publish the current timestep
     timestep_publisher->publish(message);
 
+    // Increase timestep
+    timestep++;
+  }
+
+  /// \brief The main timer callback function, publishes the current timestep, broadcasts groundtruth transform
+  void slow_timer_callback()
+  {
     // Publish walls
     publish_walls();
 
-    // Increase timestep
-    timestep++;
+    // Publish obstacles
+    publish_obstacles();
   }
 
   /// \brief Reset the simulation
@@ -270,7 +284,8 @@ private:
       // Add to marker array
       obstacles.markers.push_back(obstacle);
     }
-    // RCLCPP_INFO_STREAM(get_logger(), "Publishing Marker Array");
+    
+    // Publish obstacle markers
     obstacle_publisher->publish(obstacles);
   }
 };
