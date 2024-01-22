@@ -47,6 +47,36 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+          All Enabled: false
+          nusim/world:
+              Value: true
+          red/base_footprint:
+              Value: false
+          red/base_link:
+              Value: false
+          red/base_scan:
+              Value: false
+          red/caster_back_link:
+              Value: false
+          red/imu_link:
+              Value: false
+          red/wheel_left_link:
+              Value: false
+          red/wheel_right_link:
+              Value: false
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: false
+      Tree:
+        {}
+      Update Interval: 0
+      Value: false
     - Alpha: 1
       Class: rviz_default_plugins/RobotModel
       Collision Enabled: false
@@ -130,7 +160,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: red/base_link
+    Fixed Frame: nusim/world
     Frame Rate: 30
   Name: root
   Tools:

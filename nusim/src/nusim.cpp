@@ -52,8 +52,8 @@ public:
     declare_parameter("x0", 0.0);
     declare_parameter("y0", 0.0);
     declare_parameter("theta0", 0.0);
-    declare_parameter("arena_x_length", 10.0);
-    declare_parameter("arena_y_length", 10.0);
+    declare_parameter("arena_x_length", 6.0);
+    declare_parameter("arena_y_length", 6.0);
     declare_parameter("obstacles_x", std::vector<double>{});
     declare_parameter("obstacles_y", std::vector<double>{});
     declare_parameter("obstacles_radius", 0.038);
@@ -90,11 +90,6 @@ public:
     main_timer = this->create_wall_timer(
       std::chrono::milliseconds(cycle_time),
       std::bind(&Nusim::timer_callback, this));
-
-    // Slow timer
-    slow_timer = this->create_wall_timer(
-      std::chrono::milliseconds(1000),
-      std::bind(&Nusim::slow_timer_callback, this));
   }
 
 private:
@@ -113,7 +108,6 @@ private:
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr main_timer;
-  rclcpp::TimerBase::SharedPtr slow_timer;
   rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_publisher;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstacle_publisher;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr walls_publisher;
@@ -149,22 +143,15 @@ private:
     tf.transform.rotation.w = quaternion.w();
 
     tf_broadcaster->sendTransform(tf);
-
-    // Publish the current timestep
-    timestep_publisher->publish(message);
-
-    // Increase timestep
-    timestep++;
-  }
-
-  /// \brief The main timer callback function, publishes the current timestep, broadcasts groundtruth transform
-  void slow_timer_callback()
-  {
+  
     // Publish walls
     publish_walls();
 
     // Publish obstacles
     publish_obstacles();
+
+    // Increase timestep
+    timestep++;
   }
 
   /// \brief Reset the simulation
@@ -195,9 +182,8 @@ private:
   /// @brief Publish wall marker locations
   void publish_walls()
   {
-    visualization_msgs::msg::MarkerArray walls;
-
     // Create wall markers
+    visualization_msgs::msg::MarkerArray walls;
     visualization_msgs::msg::Marker wall1, wall2, wall3, wall4;
     walls.markers.push_back(wall1);
     walls.markers.push_back(wall2);
@@ -208,7 +194,7 @@ private:
       walls.markers.at(i).header.stamp = get_clock()->now();
       walls.markers.at(i).header.frame_id = "nusim/world";
       walls.markers.at(i).id = i;
-      walls.markers.at(i).type = 1;
+      walls.markers.at(i).type = 1;     // box
       walls.markers.at(i).action = 0;
 
       // Set color
