@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <random>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/u_int64.hpp"
@@ -21,21 +22,27 @@ class Nusim : public rclcpp::Node
 public:
     Nusim() : Node("nusim"), timestep_(0)
     {
-        // Define parameters and default values
+        // Parameters and default values
         declare_parameter("rate", 200);
         declare_parameter("x0", 10.0);
         declare_parameter("y0", 10.0);
         declare_parameter("theta0", 0.0);
         declare_parameter("arena_x_length", 0.0);
         declare_parameter("arena_y_length", 0.0);
+        declare_parameter("obstacles_x", std::vector<double>{});
+        declare_parameter("obstacles_y", std::vector<double>{});
+        declare_parameter("obstacles_radius", 0.038);
 
         // Define parameter variables
-        int rate = get_parameter("rate").as_int();
-        double x0 = get_parameter("x0").as_double();
-        double y0 = get_parameter("y0").as_double();
-        double theta0 = get_parameter("theta0").as_double();
-        double arena_x_length = get_parameter("arena_x_length").as_double();
-        double arena_y_length = get_parameter("arena_y_length").as_double();
+        rate = get_parameter("rate").as_int();
+        x0 = get_parameter("x0").as_double();
+        y0 = get_parameter("y0").as_double();
+        theta0 = get_parameter("theta0").as_double();
+        arena_x_length = get_parameter("arena_x_length").as_double();
+        arena_y_length = get_parameter("arena_y_length").as_double();
+        obstacles_x = get_parameter("obstacles_x").as_double_array();
+        obstacles_y = get_parameter("obstacles_y").as_double_array();
+        obstacles_radius = get_parameter("obstacles_radius").as_double();
 
         // Initialize groundtruth position variables
         double x_gt, y_gt, theta_gt;
@@ -126,6 +133,7 @@ private:
     {
         visualization_msgs::msg::MarkerArray walls;
 
+        // Create wall markers
         visualization_msgs::msg::Marker marker1, marker2, marker3, marker4;
         walls.markers.push_back(marker1);
         walls.markers.push_back(marker2);
@@ -133,27 +141,27 @@ private:
         walls.markers.push_back(marker4);
 
         for (int i = 0; i < 4; i++) {
-        walls.markers.at(i).header.stamp = current_time;
-        walls.markers.at(i).header.frame_id = "nusim/world";
-        walls.markers.at(i).id = i;
-        walls.markers.at(i).type = 1;
-        walls.markers.at(i).action = 0;
+            walls.markers.at(i).header.stamp = current_time;
+            walls.markers.at(i).header.frame_id = "nusim/world";
+            walls.markers.at(i).id = i;
+            walls.markers.at(i).type = 1;
+            walls.markers.at(i).action = 0;
 
-        // set color
-        walls.markers.at(i).color.r = 1.0;
-        walls.markers.at(i).color.g = 0.0;
-        walls.markers.at(i).color.b = 0.0;
-        walls.markers.at(i).color.a = 1.0;
+            // Set color
+            walls.markers.at(i).color.r = 1.0;
+            walls.markers.at(i).color.g = 0.0;
+            walls.markers.at(i).color.b = 0.0;
+            walls.markers.at(i).color.a = 1.0;
 
-        // set height to 0.25
-        walls.markers.at(i).scale.x = 0.0;
-        walls.markers.at(i).scale.y = 0.0;
-        walls.markers.at(i).scale.z = 0.25;
+            // Set height to 0.25
+            walls.markers.at(i).scale.x = 0.0;
+            walls.markers.at(i).scale.y = 0.0;
+            walls.markers.at(i).scale.z = 0.25;
 
-        // set height of marker midpoint to 0.25/2
-        walls.markers.at(i).pose.position.x = 0.0;
-        walls.markers.at(i).pose.position.y = 0.0;
-        walls.markers.at(i).pose.position.z = 0.125;
+            // Set height of marker midpoint to 0.25/2
+            walls.markers.at(i).pose.position.x = 0.0;
+            walls.markers.at(i).pose.position.y = 0.0;
+            walls.markers.at(i).pose.position.z = 0.125;
         }
 
         const auto thiccness = 0.2;
@@ -176,6 +184,43 @@ private:
 
         // Publish wall markers
         walls_publisher->publish(markers);
+    }
+
+    /// @brief Publish obstacle marker locations
+    void publish_obstacles()
+    {
+        visualization_msgs::msg::MarkerArray markers;
+
+        for (size_t i = 0; i < n_cylinders; i++) {
+            // Create obstacle marker
+            visualization_msgs::msg::Marker obstacle;
+            obstacle.header.stamp = current_time;
+            obstacle.header.frame_id = "nusim/world";
+            obstacle.id = i;
+            obstacle.type = 3;  // cylinder
+            obstacle.action = 0;
+
+            // Set color 
+            obstacle.color.r = 1.0;
+            obstacle.color.g = 0.0;
+            obstacle.color.b = 0.0;
+            obstacle.color.a = 1.0;
+
+            // Set radius and height
+            obstacle.scale.x = 2 * obstacles_radius;
+            obstacle.scale.y = 2 * obstacles_radius;
+            obstacle.scale.z = 0.25;
+
+            // Set obstacle location
+            obstacle.pose.position.x = obstacles_x.at(i);
+            obstacle.pose.position.y = obstacles_y.at(i);
+            obstacle.pose.position.z = 0.125;
+
+            // Add to marker array
+            markers.markers.push_back(obstacle);
+        }
+        // RCLCPP_INFO_STREAM(get_logger(), "Publishing Marker Array");
+        obstacle_publisher->publish(markers);
     }
 };
 

@@ -17,4 +17,6 @@ Task C.1 - Create nusim package: COMPLETE
 Task C.2 - Add simulation node: COMPLETE
 Task C.3 - Add simulated turtle: COMPLETE
 Task C.4 - Add walls: COMPLETE
-Task C.5 - Add obstacles: IN PROGRESS
+Task C.5 - Add obstacles: COMPLETE
+Task C.6 - Create launch file: IN PROGRESS
+Task C.7 - Create README file for nusim: IN PROGRESS
