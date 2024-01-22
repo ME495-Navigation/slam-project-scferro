@@ -53,13 +53,13 @@ namespace turtlelib
         explicit Transform2D(Vector2D trans);
 
         /// \brief create a pure rotation
-        /// \param radians - angle of the rotation, in radians
+        /// \param radians angle of the rotation, in radians
         explicit Transform2D(double radians);
 
         /// \brief Create a transformation with a translational and rotational
         /// component
-        /// \param trans - the translation
-        /// \param radians - the rotation, in radians
+        /// \param trans the translation
+        /// \param radians the rotation, in radians
         Transform2D(Vector2D trans, double radians);
 
         /// \brief apply a transformation to a 2D Point
@@ -68,12 +68,12 @@ namespace turtlelib
         Point2D operator()(Point2D p) const;
 
         /// \brief apply a transformation to a 2D Vector
-        /// \param v - the vector to transform
+        /// \param v the vector to transform
         /// \return a vector in the new coordinate system
         Vector2D operator()(Vector2D v) const;
 
         /// \brief apply a transformation to a Twist2D (e.g. using the adjoint)
-        /// \param v - the twist to transform
+        /// \param v the twist to transform
         /// \return a twist in the new coordinate system
         Twist2D operator()(Twist2D v) const;
 
@@ -83,7 +83,7 @@ namespace turtlelib
 
         /// \brief compose this transform with another and store the result
         /// in this object
-        /// \param rhs - the first transform to apply
+        /// \param rhs the first transform to apply
         /// \return a reference to the newly transformed operator
         Transform2D & operator*=(const Transform2D & rhs);
 
