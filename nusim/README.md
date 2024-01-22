@@ -13,8 +13,8 @@ The parameters for the simulation are listed below. These can be changed in the 
 - theta0 (double): The initial theta orientation of the robot [rad]
 - arena_x_length (double): The X length of the arena [m]
 - arena_y_length (double): The Y length of the arena [m]
-- obstacles_x (std::vector): The X coordinates of the obstacles [m]
-- obstacles_y (std::vector): The Y coordinates of the obstacles [m]
+- obstacles_x (std::vector<double>): The X coordinates of the obstacles [m]
+- obstacles_y (std::vector<double>): The Y coordinates of the obstacles [m]
 - obstacles_radius (double): The radius of the circular obstacles [m]
 ## Screenshot of Simulation
 ![nusim](images/nusim.png?raw=true "nusim")
