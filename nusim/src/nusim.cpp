@@ -8,9 +8,11 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/UInt64.hpp"
-#include "std_srvs/srv/Empty.hpp"
-#include "geometry_msgs/msg/TransformStamped.hpp"
+#include "std_srvs/srv/Empty.hpp
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nusim/srv/teleport.hpp"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_ros/transform_broadcaster.h"
 
 class Nusim : public rclcpp::Node
 {
@@ -49,10 +51,10 @@ public:
 
 private:
 
-    // Initialize position variables
-    double x, y, theta;
+    // Initialize groundtruth position variables
+    double x_gt, y_gt, theta_gt;
 
-    /// \brief The main timer callback function, publishes the current timestep, broadcasts current transform
+    /// \brief The main timer callback function, publishes the current timestep, broadcasts groundtruth transform
     void timerCallback()
     {
         // Publish the current timestep
@@ -69,18 +71,17 @@ private:
         tf.header.stamp = get_clock()->now();
         tf.header.frame_id = "nusim/world";
         tf.child_frame_id = "red/base_footprint";
-        tf.transform.translation.x = x;
-        tf.transform.translation.y = y;
+        tf.transform.translation.x = x_gt;
+        tf.transform.translation.y = y_gt;
         tf.transform.translation.z = 0.0;
 
         tf2::Quaternion quaternion;
-        quaternion.setRPY(0, 0, theta);
+        quaternion.setRPY(0, 0, theta_gt);
         tf.transform.rotation.x = quaternion.x();
         tf.transform.rotation.y = quaternion.y();
         tf.transform.rotation.z = quaternion.z();
         tf.transform.rotation.w = quaternion.w();
 
-        // Send the transformation
         tf_broadcaster->sendTransform(tf);
         
     }
@@ -94,9 +95,9 @@ private:
         timestep_ = 0;
 
         // Reset position variables
-        x = x0;
-        y = y0;
-        theta = theta0;
+        x_gt = x0;
+        y_gt = y0;
+        theta_gt = theta0;
     }
 
     /// \brief Teleport the turtlebot to the specified position
@@ -105,9 +106,9 @@ private:
         nusim::srv::Teleport::Request::SharedPtr request,
         nusim::srv::Teleport::Response::SharedPtr)
     {
-        x = request->x;
-        y = request->y;
-        theta = request->theta;
+        x_gt = request->x;
+        y_gt = request->y;
+        theta_gt = request->theta;
     }
 };
 
