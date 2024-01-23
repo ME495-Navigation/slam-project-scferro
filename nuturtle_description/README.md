@@ -2,9 +2,10 @@
 ## Author:
 Stephen Ferro
 ## Description
+This package contains the URDF description of the turtlebot, as well as launchfiles to display the turtlebot in RViz. The turtlebot can be displayed in red, greed, blue, or purple, or all four can be displayed at once using the launchfiles below. 
 ## Launchfiles
-- `ros2 launch nuturtle_description load_one.launch.py` to see the robot in rviz.
-- `ros2 launch nuturtle_description load_all.launch.xml` to see four copies of the robot in rviz.
+- Use `ros2 launch nuturtle_description load_one.launch.py` to see a single robot in RViz.
+- Use `ros2 launch nuturtle_description load_all.launch.xml` to see four copies of the robot in RViz.
 
 - `ros2 launch nuturtle_description load_one.launch.py --show-args` outputs:
   ```
