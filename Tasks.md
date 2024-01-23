@@ -10,7 +10,7 @@ Task A.6 - Create README for nuturtle_description package: COMPLETE
 Task B.1 - Geometry primitives: COMPLETE
 Task B.2 - Geometry unit tests: COMPLETE
 Task B.3 - se2d geometry: COMPLETE
-Task B.4 - se2d geometry unit tests: IN PROGRESS
+Task B.4 - se2d geometry unit tests: COMPLETE
 Task B.5 - Visualization: COMPLETE
 Task B.6 - Create frame_main.cpp: IN PROGRESS
 Task B.7 - Create README file for turtlelib: COMPLETE

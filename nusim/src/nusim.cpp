@@ -143,7 +143,7 @@ private:
     tf.transform.rotation.w = quaternion.w();
 
     tf_broadcaster->sendTransform(tf);
-  
+
     // Publish walls
     publish_walls();
 
@@ -270,7 +270,7 @@ private:
       // Add to marker array
       obstacles.markers.push_back(obstacle);
     }
-    
+
     // Publish obstacle markers
     obstacle_publisher->publish(obstacles);
   }

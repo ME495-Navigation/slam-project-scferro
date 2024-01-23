@@ -48,11 +48,8 @@ namespace turtlelib {
 
     Vector2D Transform2D::operator()(Vector2D v) const {
         double new_x, new_y, multiplier;
-        new_x = v.x * cos(rot) - v.y * sin(rot) + trans.x;
-        new_y = v.x * sin(rot) + v.y * cos(rot) + trans.y;
-        multiplier = sqrt(pow(v.x, 2.0) + pow(v.y, 2.0)) / sqrt(pow(new_x, 2.0) + pow(new_y, 2.0));
-        new_x = new_x * multiplier;
-        new_y = new_y * multiplier;
+        new_x = v.x * cos(rot) - v.y * sin(rot);
+        new_y = v.x * sin(rot) + v.y * cos(rot);
         return {new_x, new_y}; // transformed vector is the same magnitude as original vector, but rotated
     }
 
@@ -61,7 +58,7 @@ namespace turtlelib {
     }
 
     Transform2D Transform2D::inv() const {
-        return {{-trans.x * cos(rot - trans.y * sin(rot)), -trans.y * cos(rot) + trans.x * sin(rot)}, -rot};
+        return {{-trans.x * cos(rot) - trans.y * sin(rot), -trans.y * cos(rot) + trans.x * sin(rot)}, -rot};
     }
 
     Transform2D & Transform2D::operator*=(const Transform2D & rhs) {
