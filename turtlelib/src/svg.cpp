@@ -8,45 +8,47 @@
 
 namespace turtlelib {
 
-    Svg::Svg() {}
+    Svg::Svg() {
 
-    int Svg::drawPoint(Point2D point, str color) {
-        std::ostringstream oss;
-        oss << "<circle cx=\"" << point.x << "\" cy=\"" << point.y << "\" r=\"2\" stroke=\"" << color << "\" fill=\"" << color << "\" stroke-width=\"1\" />\n";
-        elements.push_back(oss.str());
-        return 0; // Success
-    }
-
-    int Svg::drawVector(Vector2D vector, str color) {
-        std::ostringstream oss;
-        oss << "<line x1=\"0\" y1=\"0\" x2=\"" << vector.x << "\" y2=\"" << vector.y << "\" stroke=\"" << color << "\" />\n";
-        elements.push_back(oss.str());
-        return 0; // Success
-    }
-
-    int Svg::drawCoordinateFrame() {
-
-    }
-
-    std::string Svg::toString() const {
-        std::ostringstream oss;
-        oss << "<svg width=\"500\" height=\"500\" xmlns=\"http://www.w3.org/2000/svg\">\n";
-        for (const auto& element : elements) {
-            oss << "  " << element;
+        int Svg::drawPoint(const Point2D point, const std::string color) {
+            svgContent += "<circle cx='" + std::to_string(point.x) +
+                        "' cy='" + std::to_string(point.y) +
+                        "' r='3' fill='" + color + "' />\n";
+            return 0;
         }
-        oss << "</svg>\n";
-        return oss.str();
-    }
 
-    int Svg::saveToFile(const std::string& filename) const {
-        std::ofstream file(filename);
-        if (file.is_open()) {
-            file << toString();
-            file.close();
-            return 0; // Success
-        } else {
-            return 1; // Failure: Unable to open the file for writing
+        int Svg::drawVector(const Point2D point, const Vector2D vector, const std::string color) {
+            svgContent += "<line x1='" + std::to_string(vector.x + point.x) +
+                        "' y1='" + std::to_string(vector.y + point.y) +
+                        "' x2='" + std::to_string(point.x) +
+                        "' y2='" + std::to_string(point.y) +
+                        "' stroke='" + color + "' stroke-width="5" marker-start=\"url(#Arrow1Sstart)\" />\n";
+            return 0;
         }
+
+        int Svg::drawCoordinateFrame(const Point2D origin, const Vector2D x_axis) {
+            svgContent += "<g>\n";
+            drawVector(origin, x_axis);
+            Vector2D y_axis;
+            y_axis.x = -x_axis.y;
+            y_axis.y = x_axis.x;
+            drawVector(origin, y_axis);
+            svgContent += "</g>\n";
+            return 0;
+        }
+
+        int Svg::saveToFile(const std::string filename) {
+            std::ofstream file(filename);
+            if (file.is_open()) {
+                file << "<svg width='100' height='100' xmlns='http://www.w3.org/2000/svg'>\n";
+                file << svgContent;
+                file << "</svg>\n";
+                file.close();
+            }
+            svgContent.clear(); // Clear content after saving to file
+            return 0;
+        }
+
     }
 
 }

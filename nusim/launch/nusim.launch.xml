@@ -1,5 +1,4 @@
 <launch>
-
   <!-- Launch nusim node -->
   <node pkg="nusim" exec="nusim" name="nusim">
     <param from="$(find-pkg-share nusim)/config/basic_world.yaml"/>
@@ -13,5 +12,4 @@
 
   <!-- Launch RViz -->
   <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nusim)/config/nusim.rviz"/>
-
 </launch>
