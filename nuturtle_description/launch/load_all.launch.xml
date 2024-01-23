@@ -21,7 +21,7 @@
     </include>
 
     <!-- Launch RViz -->
-    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nuturtle_description)/launch/basic_all.rviz"/>
+    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nuturtle_description)/config/basic_all.rviz"/>
 
     <!-- Publish the initial position of each robot -->
     <node pkg="tf2_ros" exec="static_transform_publisher" name="nusim_world_purple" args="0.3 0 0 0 0 0 nusim/world purple/base_footprint"/>
