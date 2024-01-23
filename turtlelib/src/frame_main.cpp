@@ -71,6 +71,12 @@ int main() {
     v_hat_b.x = vb.x / mag;
     v_hat_b.y = vb.y / mag;
 
+    // Output the four vectors
+    std::cout << "v_hat_b: " << v_hat_b << "\n";
+    std::cout << "v_a: " << va << "\n";
+    std::cout << "v_b: " << vb << "\n";
+    std::cout << "v_c: " << vc << "\n";
+
     // Draw points and vectors using SVG
     Svg svg;
     svg.drawPoint(pa, "purple");
@@ -82,6 +88,7 @@ int main() {
 
     // Output the drawing to /tmp/frames.svg
     svg.saveToFile("/tmp/frames.svg");
+    std::cout << "File saved to /tmp/frames.svg.\n";
 
     return 0;
 }
