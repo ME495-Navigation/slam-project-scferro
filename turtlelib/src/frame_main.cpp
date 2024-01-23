@@ -23,8 +23,8 @@ int main() {
     // Compute all transformations
     Transform2D Tba = Tab.inv();
     Transform2D Tcb = Tbc.inv();
-    Transform2D Tac = Tba * Tbc;
-    Transform2D Tca = Tcb * Tab;
+    Transform2D Tac = Tab * Tbc;
+    Transform2D Tca = Tcb * Tba;
 
     // Display all transformations
     std::cout << "T_{a,b}: " << Tab << "\n";
@@ -50,10 +50,12 @@ int main() {
 
     // Origin in each frame
     Point2D oa, ob, oc;
-    oa.x = 0;
-    oa.y = 0;
-    ob = Tba(oa);
-    oc = Tca(oa);
+    oa.x = 0.0;
+    oa.y = 0.0;
+    ob.x = 0.0;
+    ob.y = 0.0;
+    oc.x = 0.0;
+    oc.y = 0.0;
 
     // Prompt the user to enter a vector vb in frame b
     std::cout << "Enter vector v_b:\n";
@@ -61,8 +63,8 @@ int main() {
     std::cin >> vb;
 
     // Output vb expressed in frame a and frame c coordinates
-    Vector2D va = Tba(vb);
-    Vector2D vc = Tca(vb);
+    Vector2D va = Tab(vb);
+    Vector2D vc = Tcb(vb);
 
     // Normalize the vector to form v^b
     double mag;

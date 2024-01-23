@@ -15,7 +15,7 @@ namespace turtlelib {
         origin_svg_y = 528.0;
         std::string newContent;
         newContent += "<circle cx='" + std::to_string(point.x * 96.0 + origin_svg_x) +
-                    "' cy='" + std::to_string(point.y * 96.0 + origin_svg_y) +
+                    "' cy='" + std::to_string(-point.y * 96.0 + origin_svg_y) +
                     "' r='3' fill='" + color + "' />\n";
         svgContent += newContent;
         return newContent;
@@ -27,9 +27,9 @@ namespace turtlelib {
         origin_svg_y = 528.0;
         std::string newContent;
         svgContent += "<line x1='" + std::to_string((vector.x + point.x) * 96.0 + origin_svg_x) +
-                    "' y1='" + std::to_string((vector.y + point.y) * 96.0 + origin_svg_y) +
+                    "' y1='" + std::to_string(-(vector.y + point.y) * 96.0 + origin_svg_y) +
                     "' x2='" + std::to_string(point.x * 96.0 + origin_svg_x) +
-                    "' y2='" + std::to_string(point.y * 96.0 + origin_svg_y) +
+                    "' y2='" + std::to_string(-point.y * 96.0 + origin_svg_y) +
                     "' stroke='" + color + "' stroke-width=\"5\" marker-start=\"url(#Arrow1Sstart)\" />\n";
         svgContent += newContent;
         return newContent;

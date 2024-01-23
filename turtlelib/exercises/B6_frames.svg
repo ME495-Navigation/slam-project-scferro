@@ -1,0 +1,23 @@
+<svg width="8.500000in" height="11.000000in" viewBox="0 0 816.000000 1056.000000">
+<defs>
+   <marker
+       style="overflow:visible"
+       id="Arrow1Sstart"
+       refX="0.0"
+       refY="0.0"
+       orient="auto">
+           <path
+               transform="scale(0.2) translate(6,0)"
+               style="fill-rule:evenodd;fill:context-stroke;stroke:context-stroke;stroke-width:1.0pt"
+               d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+               />
+   </marker>
+</defs>
+
+<circle cx='504.000000' cy='432.000000' r='3' fill='purple' />
+<circle cx='408.000000' cy='624.000000' r='3' fill='brown' />
+<circle cx='312.000000' cy='432.000000' r='3' fill='orange' />
+<line x1='312.000000' y1='432.000000' x2='408.000000' y2='528.000000' stroke='purple' stroke-width="5" marker-start="url(#Arrow1Sstart)" />
+<line x1='475.882251' y1='460.117749' x2='408.000000' y2='528.000000' stroke='brown' stroke-width="5" marker-start="url(#Arrow1Sstart)" />
+<line x1='504.000000' y1='624.000000' x2='408.000000' y2='528.000000' stroke='orange' stroke-width="5" marker-start="url(#Arrow1Sstart)" />
+</svg>
