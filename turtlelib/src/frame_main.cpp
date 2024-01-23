@@ -11,7 +11,7 @@ using turtlelib::Transform2D;
 using turtlelib::Twist2D;
 
 int main() {
-    // Prompt the user to enter transforms Tab and Tbc
+    // Enter transforms Tab and Tbc
     std::cout << "Enter transform T_{a,b}:\n";
     Transform2D Tab;
     std::cin >> Tab;
@@ -20,7 +20,7 @@ int main() {
     Transform2D Tbc;
     std::cin >> Tbc;
 
-    // Compute and output transformations
+    // Compute transformations
     Transform2D Tba = Tab.inv();
     Transform2D Tcb = Tbc.inv();
     Transform2D Tac = Tba * Tbc;
