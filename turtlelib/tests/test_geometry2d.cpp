@@ -75,3 +75,71 @@ TEST_CASE("Input stream operator for Vector2D", "[operator>> Vector2D]") // Step
     REQUIRE(vector.x == 2.5);
     REQUIRE(vector.y == 3.7);
 }
+
+TEST_CASE("Vector + Vector = New vector", "[operator+ Vector2D]") // Stephen Ferro
+{
+    Vector2D vec1, vec2;
+    vec1 = {1., 1.};
+    vec2 = {2., 3.};
+    REQUIRE_THAT((vec1+vec2).x, Catch::Matchers::WithinAbs(3., 1e-5));
+    REQUIRE_THAT((vec1+vec2).y, Catch::Matchers::WithinAbs(4., 1e-5));
+}
+
+TEST_CASE("Vector - Vector = New vector", "[operator- Vector2D]") // Stephen Ferro
+{
+    Vector2D vec1, vec2;
+    vec1 = {4., 4.};
+    vec2 = {2., 3.};
+    REQUIRE_THAT((vec1-vec2).x, Catch::Matchers::WithinAbs(2., 1e-5));
+    REQUIRE_THAT((vec1-vec2).y, Catch::Matchers::WithinAbs(1., 1e-5));
+}
+
+TEST_CASE("Vector * Scalar = New vector", "[operator* Vector2D]") // Stephen Ferro
+{
+    Vector2D vec;
+    double scalar;
+    vec = {1., 1.};
+    scalar = 2;
+    REQUIRE_THAT((vec*scalar).x, Catch::Matchers::WithinAbs(2., 1e-5));
+    REQUIRE_THAT((vec*scalar).y, Catch::Matchers::WithinAbs(2., 1e-5));
+}
+
+TEST_CASE("Scalar * Vector = New vector", "[operator* Vector2D]") // Stephen Ferro
+{
+    Vector2D vec;
+    double scalar;
+    vec = {1., 1.};
+    scalar = 3;
+    REQUIRE_THAT((scalar*vec).x, Catch::Matchers::WithinAbs(3., 1e-5));
+    REQUIRE_THAT((scalar*vec).y, Catch::Matchers::WithinAbs(3., 1e-5));
+}
+
+TEST_CASE("dot product", "[dot Vector2D]") // Stephen Ferro
+{
+    Vector2D vec1, vec2;
+    double dotProd;
+    vec1 = {1., 1.};
+    vec2 = {2., 3.};
+    dotProd = dot(vec1, vec2);
+    REQUIRE_THAT(dotProd, Catch::Matchers::WithinAbs(5., 1e-5));
+}
+
+TEST_CASE("magnitude", "[magnitude Vector2D]") // Stephen Ferro
+{
+    Vector2D vec;
+    double mag;
+    vec = {5., 5.};
+    mag = magnitude(vec);
+    REQUIRE_THAT(mag, Catch::Matchers::WithinAbs(7.07106781187, 1e-5));
+
+}
+
+TEST_CASE("angle", "[angle Vector2D]") // Stephen Ferro
+{
+    Vector2D vec1, vec2;
+    double ang;
+    vec1 = {1., 0.};
+    vec2 = {0., 1.};
+    ang = angle(vec1, vec2);
+    REQUIRE_THAT(ang, Catch::Matchers::WithinAbs(PI/2, 1e-5));
+}

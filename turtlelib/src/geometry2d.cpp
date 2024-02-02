@@ -40,6 +40,52 @@ namespace turtlelib {
         return newVector;
     }
 
+    Vector2D operator+(const Vector2D & vector1, const Vector2D & vector2) {
+        Vector2D newVector;
+        newVector.x = vector1.x + vector2.x;
+        newVector.y = vector1.y + vector2.y;
+        return newVector;
+    }
+
+    Vector2D operator-(const Vector2D & vector1, const Vector2D & vector2) {
+        Vector2D newVector;
+        newVector.x = vector1.x - vector2.x;
+        newVector.y = vector1.y - vector2.y;
+        return newVector;
+    }
+
+    Vector2D operator*(const Vector2D & vector, const double & scalar) {
+        Vector2D newVector;
+        newVector.x = vector.x * scalar;
+        newVector.y = vector.y * scalar;
+        return newVector;
+    }
+
+    Vector2D operator*(const double & scalar, const Vector2D & vector) {
+        Vector2D newVector;
+        newVector.x = vector.x * scalar;
+        newVector.y = vector.y * scalar;
+        return newVector;
+    }
+
+    double dot(const Vector2D & vector1, const Vector2D & vector2) {
+        double dot_product;
+        dot_product = (vector1.x * vector2.x) + (vector1.y * vector2.y);
+        return dot_product;
+    }
+
+    double magnitude(const Vector2D & vector) {
+        double mag;
+        mag = sqrt(pow(vector.x, 2) + pow(vector.y, 2));
+        return mag;
+    }
+
+    double angle(const Vector2D & vector1, const Vector2D & vector2) {
+        double theta;
+        theta = acos(dot(vector1, vector2) / (magnitude(vector1) * magnitude(vector2)));
+        return theta;
+    }
+
     Point2D operator+(const Point2D & tail, const Vector2D & disp) {
         Point2D newPoint;
         newPoint.x = tail.x + disp.x;

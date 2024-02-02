@@ -110,6 +110,51 @@ namespace turtlelib
     /// NOTE: this is not implemented in terms of -= because subtracting two Point2D yields a Vector2D
     Vector2D operator-(const Point2D & head, const Point2D & tail);
 
+    /// \brief Adding two vectors yields a new vector
+    /// \param vector1 the first vector
+    /// \param vector2 the second vector
+    /// \return a new vector, the result of adding the two vectors
+    /// NOTE: this is not implemented in terms of == because subtracting two Point2D yields a Vector2D
+    Vector2D operator+(const Vector2D & vector1, const Vector2D & vector2);
+
+    /// \brief Subtracting one point from another yields a vector
+    /// \param vector1 the first vector
+    /// \param vector2 the second vector
+    /// \return a new vector, the result of subtracting vector2 from vector1
+    /// NOTE: this is not implemented in terms of -= because subtracting two Point2D yields a Vector2D
+    Vector2D operator-(const Vector2D & vector1, const Vector2D & vector2);
+
+    /// \brief The dot product of two vectors is a scalar
+    /// \param vector1 the first vector
+    /// \param vector2 the second vector
+    /// \return the dot product of vector1 and vector2
+    double dot(const Vector2D & vector1, const Vector2D & vector2);
+
+    /// \brief The magnitude of a vector is a scalar
+    /// \param vector the first vector
+    /// \return the magnitude of the vector
+    double magnitude(const Vector2D & vector);
+
+    /// \brief The angle between two vectors is a scalar
+    /// \param vector1 the first vector
+    /// \param vector2 the second vector
+    /// \return the angle between vector1 and vector2
+    double angle(const Vector2D & vector1, const Vector2D & vector2);
+
+    /// \brief Multiplying a vector by a scalar yields a vector
+    /// \param vector the first vector
+    /// \param scalar the scalar
+    /// \return a new vector, the result of multiplying the vector by the scalar
+    /// NOTE: this is not implemented in terms of *= because subtracting two Point2D yields a Vector2D
+    Vector2D operator*(const Vector2D & vector, const double & scalar);
+
+    /// \brief Multiplying a vector by a scalar yields a vector
+    /// \param scalar the scalar
+    /// \param vector the first vector
+    /// \return a new vector, the result of multiplying the vector by the scalar
+    /// NOTE: this is not implemented in terms of *= because subtracting two Point2D yields a Vector2D
+    Vector2D operator*(const double & scalar, const Vector2D & vector);
+
     /// \brief Adding a vector to a point yields a new point displaced by the vector
     /// \param tail The origin of the vector's tail
     /// \param disp The displacement vector
