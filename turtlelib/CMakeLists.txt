@@ -22,11 +22,15 @@ include(CTest)
 enable_testing()
 add_executable(geometry2d_test tests/test_geometry2d.cpp)
 add_executable(se2d_test tests/test_se2d.cpp)
+add_executable(svg_test tests/test_svg.cpp)
 target_link_libraries(geometry2d_test turtlelib Catch2::Catch2WithMain)
 target_link_libraries(se2d_test turtlelib Catch2::Catch2WithMain)
+target_link_libraries(svg_test turtlelib Catch2::Catch2WithMain)
+
 
 add_test(NAME Test_Geometry2D COMMAND geometry2d_test)
 add_test(NAME Test_SE2D COMMAND se2d_test)
+add_test(NAME Test_Svg COMMAND svg_test)
 
 # install the include files by copying the whole include directory
 install(DIRECTORY include/turtlelib DESTINATION include)

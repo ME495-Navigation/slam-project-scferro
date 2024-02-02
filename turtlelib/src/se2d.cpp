@@ -47,7 +47,7 @@ namespace turtlelib {
     }
 
     Vector2D Transform2D::operator()(Vector2D v) const {
-        double new_x, new_y, multiplier;
+        double new_x, new_y;
         new_x = v.x * cos(rot) - v.y * sin(rot);
         new_y = v.x * sin(rot) + v.y * cos(rot);
         return {new_x, new_y}; // transformed vector is the same magnitude as original vector, but rotated

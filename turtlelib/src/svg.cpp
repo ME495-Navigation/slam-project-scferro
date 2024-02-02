@@ -9,6 +9,10 @@
 
 namespace turtlelib {
 
+    /// \brief add a point to the svg
+    /// \param point the point to draw
+    /// \param color the desired color of the point
+    /// \returns a string to draw the point in an svg file
     std::string Svg::drawPoint(Point2D point, std::string color) {
         double origin_svg_x, origin_svg_y;
         origin_svg_x = 408.0;
@@ -21,12 +25,17 @@ namespace turtlelib {
         return newContent;
     }
 
+    /// \brief add a vector to the svg
+    /// \param point the origin of the vector
+    /// \param vector the vector to draw
+    /// \param color the desired color of the vector
+    /// \returns a string to draw the vector in an svg file
     std::string Svg::drawVector(Point2D point, Vector2D vector, std::string color) {
         double origin_svg_x, origin_svg_y;
         origin_svg_x = 408.0;
         origin_svg_y = 528.0;
         std::string newContent;
-        svgContent += "<line x1='" + std::to_string((vector.x + point.x) * 96.0 + origin_svg_x) +
+        newContent += "<line x1='" + std::to_string((vector.x + point.x) * 96.0 + origin_svg_x) +
                     "' y1='" + std::to_string(-(vector.y + point.y) * 96.0 + origin_svg_y) +
                     "' x2='" + std::to_string(point.x * 96.0 + origin_svg_x) +
                     "' y2='" + std::to_string(-point.y * 96.0 + origin_svg_y) +
@@ -35,18 +44,9 @@ namespace turtlelib {
         return newContent;
     }
 
-    std::string Svg::drawCoordinateFrame(Point2D origin, Vector2D x_axis) {
-        std::string newContent;
-        newContent += "<g>\n";
-        newContent += drawVector(origin, x_axis, "red");
-        Vector2D y_axis;
-        y_axis.x = -x_axis.y;
-        y_axis.y = x_axis.x;
-        newContent += drawVector(origin, y_axis, "green");
-        newContent += "</g>\n";
-        return newContent;
-    }
-
+    /// \brief saves everything added to the svg to an svg file
+    /// \param filename the name of the file to which the svg should be saved
+    /// \returns 0 if successful
     int Svg::saveToFile(std::string filename) {
         std::ofstream file(filename);
         if (file.is_open()) {
