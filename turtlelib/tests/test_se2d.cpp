@@ -144,3 +144,44 @@ TEST_CASE("Input stream operator for Transform2D", "[operator>> Transform2D]") /
     REQUIRE_THAT(new_point.x, Catch::Matchers::WithinAbs(2.5, 1e-5));
     REQUIRE_THAT(new_point.y, Catch::Matchers::WithinAbs(1.2, 1e-5));
 }
+
+TEST_CASE("Integrate a twist, Translation", "[Transform2D]") // Stephen Ferro
+{
+    Transform2D transform;
+    Twist2D twist = {0.0, 2.0, 0.0};
+    transform = integrate_twist(twist);
+
+    Point2D point;
+    Point2D new_point;
+    point = {1.0, 0.0};
+    new_point = transform(point);
+    REQUIRE_THAT(new_point.x, Catch::Matchers::WithinAbs(3.0, 1e-5));
+    REQUIRE_THAT(new_point.y, Catch::Matchers::WithinAbs(0.0, 1e-5));
+}
+
+TEST_CASE("Integrate a twist, Rotation", "[Transform2D]") // Stephen Ferro
+{
+    Transform2D transform;
+    Twist2D twist = {PI, 0.0, 0.0};
+    transform = integrate_twist(twist);
+
+    Point2D point;
+    Point2D new_point;
+    point = {1.0, 0.0};
+    new_point = transform(point);
+    REQUIRE_THAT(new_point.x, Catch::Matchers::WithinAbs(-1.0, 1e-5));
+    REQUIRE_THAT(new_point.y, Catch::Matchers::WithinAbs(0.0, 1e-5));
+}
+
+TEST_CASE("Integrate a twist, Combined", "[Transform2D]") // Stephen Ferro
+{
+    Transform2D transform;
+    Twist2D twist = {PI, 2.0, 0.0};
+    transform = integrate_twist(twist);
+
+    Point2D point, new_point;
+    point = {1.0, 0.0};
+    new_point = transform(point);
+    REQUIRE_THAT(new_point.x, Catch::Matchers::WithinAbs(1.0, 1e-5));
+    REQUIRE_THAT(new_point.y, Catch::Matchers::WithinAbs(0.0, 1e-5));
+}

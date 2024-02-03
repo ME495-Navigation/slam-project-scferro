@@ -121,7 +121,10 @@ namespace turtlelib
     /// HINT: This function should be implemented in terms of *=
     Transform2D operator*(Transform2D lhs, const Transform2D & rhs);
 
-
+    /// \brief integrate a twist over 1 second
+    /// \param twist - the twist
+    /// \return the integral of the twist over 1 time unit/second
+    Transform2D integrate_twist(const Twist2D & twist);
 }
 
 #endif

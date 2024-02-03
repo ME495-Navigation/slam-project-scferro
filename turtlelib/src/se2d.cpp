@@ -110,4 +110,14 @@ namespace turtlelib {
         return lhs*=rhs; 
     }
 
+    Transform2D integrate_twist(const Twist2D & twist) {
+        Vector2D vector;
+        double radians;
+        vector.x = twist.x;
+        vector.y = twist.y;
+        radians = twist.omega;
+        Transform2D tf = Transform2D(vector, radians);
+        return tf;
+    }
+
 }
