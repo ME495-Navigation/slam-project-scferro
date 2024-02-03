@@ -112,12 +112,25 @@ namespace turtlelib {
 
     Transform2D integrate_twist(const Twist2D & twist) {
         Vector2D vector;
-        double radians;
+        double omega;
+        Transform2D Tsb, Tbb_prime, Tss_prime, Tbs, Ts_prime_b_prime;
         vector.x = twist.x;
         vector.y = twist.y;
-        radians = twist.omega;
-        Transform2D tf = Transform2D(vector, radians);
-        return tf;
+        omega = twist.omega;
+        if (omega==0.0) {
+            Tbb_prime = Transform2D(vector, omega);
+        } else {
+            Vector2D new_vector;
+            new_vector.x = vector.y / omega;
+            new_vector.y = -vector.x / omega;
+            Tsb = Transform2D(new_vector);
+            Tss_prime = Transform2D(omega);
+            Tbs = Tsb.inv();
+            Ts_prime_b_prime = Tsb;
+            Tbb_prime = Tbs * Tss_prime * Ts_prime_b_prime;
+        }
+        
+        return Tbb_prime;
     }
 
 }

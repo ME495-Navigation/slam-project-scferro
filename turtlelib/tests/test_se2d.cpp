@@ -176,12 +176,12 @@ TEST_CASE("Integrate a twist, Rotation", "[Transform2D]") // Stephen Ferro
 TEST_CASE("Integrate a twist, Combined", "[Transform2D]") // Stephen Ferro
 {
     Transform2D transform;
-    Twist2D twist = {PI, 2.0, 0.0};
+    Twist2D twist = {PI, 0.0, 1.0};
     transform = integrate_twist(twist);
 
     Point2D point, new_point;
     point = {1.0, 0.0};
     new_point = transform(point);
-    REQUIRE_THAT(new_point.x, Catch::Matchers::WithinAbs(1.0, 1e-5));
+    REQUIRE_THAT(new_point.x, Catch::Matchers::WithinAbs(-1.6366197724, 1e-5));
     REQUIRE_THAT(new_point.y, Catch::Matchers::WithinAbs(0.0, 1e-5));
 }
