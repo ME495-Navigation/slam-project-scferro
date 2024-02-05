@@ -14,6 +14,8 @@ Task B.4 - se2d geometry unit tests: COMPLETE
 Task B.5 - Visualization: COMPLETE
 Task B.6 - Create frame_main.cpp: IN PROGRESS
 Task B.7 - Create README file for turtlelib: COMPLETE
+Task B.8 - Add vector operations: COMPLETE
+Task B.9 - Add integrate_twist function: COMPLETE
 
 Task C.1 - Create nusim package: COMPLETE
 Task C.2 - Add simulation node: COMPLETE
@@ -22,3 +24,7 @@ Task C.4 - Add walls: COMPLETE
 Task C.5 - Add obstacles: COMPLETE
 Task C.6 - Create launch file: COMPLETE
 Task C.7 - Create README file for nusim: COMPLETE
+
+Task D.1 - Create DiffDrive Class: COMPLETE
+Task D.2 - Create DiffDrive tests: IN PROGRESS
+Task D.3 - Diff Drive Documentation: IN PROGRESS

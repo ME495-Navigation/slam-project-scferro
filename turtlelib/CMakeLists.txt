@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 project(turtlelib)
 
 # Create libraries
-add_library(turtlelib src/geometry2d.cpp src/se2d.cpp src/svg.cpp )
+add_library(turtlelib src/geometry2d.cpp src/se2d.cpp src/svg.cpp src/diff_drive.cpp)
 
 # Use target_include_directories so that #include"mylibrary/header.hpp" works
 target_include_directories(turtlelib
@@ -23,14 +23,17 @@ enable_testing()
 add_executable(geometry2d_test tests/test_geometry2d.cpp)
 add_executable(se2d_test tests/test_se2d.cpp)
 add_executable(svg_test tests/test_svg.cpp)
+add_executable(diff_drive_test tests/test_diff_drive.cpp)
 target_link_libraries(geometry2d_test turtlelib Catch2::Catch2WithMain)
 target_link_libraries(se2d_test turtlelib Catch2::Catch2WithMain)
 target_link_libraries(svg_test turtlelib Catch2::Catch2WithMain)
+target_link_libraries(diff_drive_test turtlelib Catch2::Catch2WithMain)
 
 
 add_test(NAME Test_Geometry2D COMMAND geometry2d_test)
 add_test(NAME Test_SE2D COMMAND se2d_test)
 add_test(NAME Test_Svg COMMAND svg_test)
+add_test(NAME Test_DiffDrive COMMAND diff_drive_test)
 
 # install the include files by copying the whole include directory
 install(DIRECTORY include/turtlelib DESTINATION include)

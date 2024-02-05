@@ -5,11 +5,13 @@
 
 
 #include<iosfwd> // contains forward definitions for iostream objects
-#include"turtlelib/geometry2D.hpp"
-#include"turtlelib/se2D.hpp"
+#include"turtlelib/geometry2d.hpp"
+#include"turtlelib/se2d.hpp"
+#include<vector>
 
 namespace turtlelib
 {
+    /// \brief a representation of a differential drive robot
     class DiffDrive
     {
     private:
@@ -31,12 +33,12 @@ namespace turtlelib
         /// \brief create a new object at the origin and set parameters
         /// \param wheel_radius the radii of the wheels
         /// \param track_width distance between the centerlines of the two wheels
-        DiffDrive(double wheel_radius, double track_width);
+        explicit DiffDrive(double radius, double track);
 
         /// \brief create a new object at a specified position and set parameters
         /// \param wheel_radius the radii of the wheels
         /// \param track_width distance between the centerlines of the two wheels
-        DiffDrive(double wheel_radius, double track_width, double x_pos, double y_pos, double theta);
+        explicit DiffDrive(double radius, double track, double x_pos, double y_pos, double theta);
 
         /// \brief update the state of the robot based on new wheel positions
         /// \param new_phi_right the new angle of the right wheel
@@ -48,5 +50,7 @@ namespace turtlelib
         /// \param twist the twist to find velocities for
         /// \return the required left and right velocities in a vector 
         std::vector<double> inverse_kinematics(Twist2D twist);
-    }
+    };
 }
+
+#endif
