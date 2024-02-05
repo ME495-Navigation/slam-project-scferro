@@ -1,0 +1,5 @@
+code does not compile due to missing dependency in package.xml
+some tests fail
+B6_Frames.svg has some problems.
+All points should be coincident (a point expressed in different coordinates is still the same point)
+It does not appear as if all frames are drawn properly

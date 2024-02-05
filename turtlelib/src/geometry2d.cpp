@@ -7,7 +7,7 @@
 namespace turtlelib {
 
     double normalize_angle(double rad) {
-        while (rad > PI) rad += -2.0*PI;
+        while (rad > PI) rad += -2.0*PI; // always put braces for control flow statement even if one line
         while (rad <= -PI) rad += 2.0*PI;
         return rad;
     }
@@ -37,14 +37,14 @@ namespace turtlelib {
         Vector2D newVector;
         newVector.x = head.x - tail.x;
         newVector.y = head.y - tail.y;
-        return newVector;
+        return newVector; // return {head.x - tail.x, head.y - tail.y}
     }
 
     Point2D operator+(const Point2D & tail, const Vector2D & disp) {
         Point2D newPoint;
         newPoint.x = tail.x + disp.x;
         newPoint.y = tail.y + disp.y;
-        return newPoint;
+        return newPoint; // no need for temporary, just return
     }
 
     std::ostream & operator<<(std::ostream & os, const Vector2D & v) {

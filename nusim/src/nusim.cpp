@@ -86,7 +86,7 @@ public:
       std::bind(&Nusim::teleport_callback, this, std::placeholders::_1, std::placeholders::_2));
 
     // Main timer
-    int cycle_time = 1000.0 / rate;
+    int cycle_time = 1000.0 / rate; // const
     main_timer = this->create_wall_timer(
       std::chrono::milliseconds(cycle_time),
       std::bind(&Nusim::timer_callback, this));

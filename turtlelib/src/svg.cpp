@@ -10,8 +10,8 @@
 namespace turtlelib {
 
     std::string Svg::drawPoint(Point2D point, std::string color) {
-        double origin_svg_x, origin_svg_y;
-        origin_svg_x = 408.0;
+        double origin_svg_x, origin_svg_y;// uninitialized variables
+        origin_svg_x = 408.0;// should be constexpr
         origin_svg_y = 528.0;
         std::string newContent;
         newContent += "<circle cx='" + std::to_string(point.x * 96.0 + origin_svg_x) +
@@ -22,7 +22,7 @@ namespace turtlelib {
     }
 
     std::string Svg::drawVector(Point2D point, Vector2D vector, std::string color) {
-        double origin_svg_x, origin_svg_y;
+        double origin_svg_x, origin_svg_y; // unitiailzed variables
         origin_svg_x = 408.0;
         origin_svg_y = 528.0;
         std::string newContent;

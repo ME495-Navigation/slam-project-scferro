@@ -47,7 +47,7 @@ namespace turtlelib {
     }
 
     Vector2D Transform2D::operator()(Vector2D v) const {
-        double new_x, new_y, multiplier;
+        double new_x, new_y, multiplier; // unitiailzed variables. no need just return the expression directly
         new_x = v.x * cos(rot) - v.y * sin(rot);
         new_y = v.x * sin(rot) + v.y * cos(rot);
         return {new_x, new_y}; // transformed vector is the same magnitude as original vector, but rotated
@@ -83,7 +83,7 @@ namespace turtlelib {
     std::istream & operator>>(std::istream & is, Transform2D & tf) {
         std::string str1, str2, str3;
         Vector2D trans;
-        double rot;
+        double rot; // unitialized variable
         const auto first_char = is.peek();
         if (first_char == 'd') {
             is >> str1;
