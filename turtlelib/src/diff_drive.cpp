@@ -17,13 +17,28 @@ namespace turtlelib {
     : phi_right(0.0), phi_left(0.0), x_robot(x_pos), y_robot(y_pos), theta_robot(theta), track_width(track), wheel_radius(radius) {}
 
     Transform2D DiffDrive::update_state(double new_phi_left, double new_phi_right) {
-        Transform2D tf_out;
+        Transform2D tf_body, tf_space_prev, tf_space;
+        Twist2D twist;
+        Vector2D trans;
+        twist = DiffDrive::get_twist(new_phi_left, new_phi_right);
+        tf_body = integrate_twist(twist);
+        tf_space_prev = Transform2D({x_robot, y_robot}, theta_robot);
+        tf_space = tf_space_prev * tf_body;
+        trans = tf_space.translation();
+        x_robot = trans.x;
+        y_robot = trans.y;
+        theta_robot = tf_space.rotation();
+        phi_right = new_phi_right;
+        phi_left = new_phi_left;
+        return tf_body;
+    }
+
+    Twist2D DiffDrive::get_twist(double new_phi_left, double new_phi_right) {
         Twist2D twist;
         // create twist, assume change in wheel position happens over unit time
         twist.x = wheel_radius * ((new_phi_right - phi_right) + (new_phi_left - phi_left)) / 2;
         twist.omega = wheel_radius * ((new_phi_right - phi_right) - (new_phi_left - phi_left)) / track_width;
-        tf_out = integrate_twist(twist);
-        return tf_out;
+        return twist;
     }
 
     std::vector<double> DiffDrive::inverse_kinematics(Twist2D twist) {
@@ -37,6 +52,11 @@ namespace turtlelib {
         } else {
             throw std::logic_error("The y velocity of the twist must be equal to 0.0.");
         }
+    }
+
+    std::vector<double> DiffDrive::return_state() {
+        std::vector<double> state = {x_robot, y_robot, theta_robot};
+        return state;
     }
 
 }

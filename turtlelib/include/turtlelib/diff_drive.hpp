@@ -46,10 +46,20 @@ namespace turtlelib
         /// \return the transformation to move the robot, also updates the current robot state
         Transform2D update_state(double new_phi_left, double new_phi_right);
 
+        /// \brief get the twist of the robot based on the new wheel positions
+        /// \param new_phi_right the new angle of the right wheel
+        /// \param new_phi_left the new angle of the left wheel
+        /// \return the body twist of the robot
+        Twist2D get_twist(double new_phi_left, double new_phi_right);
+
         /// \brief find the required wheel velocities for a given twist
         /// \param twist the twist to find velocities for
         /// \return the required left and right velocities in a vector 
         std::vector<double> inverse_kinematics(Twist2D twist);
+
+        /// \brief return the current position of the robot
+        /// \return the x, y, theta position of the robot
+        std::vector<double> return_state();
     };
 }
 
