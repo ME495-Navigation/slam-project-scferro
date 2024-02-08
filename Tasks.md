@@ -26,5 +26,8 @@ Task C.6 - Create launch file: COMPLETE
 Task C.7 - Create README file for nusim: COMPLETE
 
 Task D.1 - Create DiffDrive Class: COMPLETE
-Task D.2 - Create DiffDrive tests: IN PROGRESS
+Task D.2 - Create DiffDrive tests: COMPLETE
 Task D.3 - Diff Drive Documentation: IN PROGRESS
+
+Task E.1 - Create turtle_control node: COMPLETE
+Task E.2 - Create odometry node: IN PROGRESS

@@ -19,7 +19,7 @@ TEST_CASE("Update state, both wheel rotate forwards (pure translation)", "[DiffD
     phi_right = 4*PI;
     phi_left = 4*PI;
     Transform2D tf;
-    tf = diff_drive.update_state(phi_right, phi_left);
+    tf = diff_drive.update_state(phi_left, phi_right);
     
     Point2D point, new_point;
     point = {0.0, 0.0};
@@ -35,7 +35,7 @@ TEST_CASE("Update state, wheels spin opposite directions (pure rotation)", "[Dif
     phi_right = 4*PI;
     phi_left = -4*PI;
     Transform2D tf;
-    tf = diff_drive.update_state(phi_right, phi_left);
+    tf = diff_drive.update_state(phi_left, phi_right);
     
     Point2D point, new_point;
     point = {0.0, 0.0};
@@ -51,7 +51,7 @@ TEST_CASE("Update state, wheels spin different speeds (drive in an LH arc)", "[D
     phi_right = 4*PI;
     phi_left = 2*PI;
     Transform2D tf;
-    tf = diff_drive.update_state(phi_right, phi_left);
+    tf = diff_drive.update_state(phi_left, phi_right);
     
     Point2D point, new_point;
     point = {0.0, 0.0};
@@ -67,7 +67,7 @@ TEST_CASE("Update state, wheels spin different speeds (drive in an RH arc)", "[D
     phi_right = 2*PI;
     phi_left = 4*PI;
     Transform2D tf;
-    tf = diff_drive.update_state(phi_right, phi_left);
+    tf = diff_drive.update_state(phi_left, phi_right);
     
     Point2D point, new_point;
     point = {0.0, 0.0};

@@ -44,7 +44,7 @@ namespace turtlelib
         /// \param new_phi_right the new angle of the right wheel
         /// \param new_phi_left the new angle of the left wheel
         /// \return the transformation to move the robot, also updates the current robot state
-        Transform2D update_state(double new_phi_right, double new_phi_left);
+        Transform2D update_state(double new_phi_left, double new_phi_right);
 
         /// \brief find the required wheel velocities for a given twist
         /// \param twist the twist to find velocities for
