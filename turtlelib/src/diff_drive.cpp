@@ -59,4 +59,9 @@ namespace turtlelib {
         return state;
     }
 
+    std::vector<double> DiffDrive::return_wheels() {
+        std::vector<double> wheels = {phi_left, phi_right};
+        return wheels;
+    }
+
 }

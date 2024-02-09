@@ -41,7 +41,7 @@ public:
     declare_parameter("collision_radius", None);
 
     // Define parameter variables
-    wheel_radius = get_parameter("rate").as_double();
+    wheel_radius = get_parameter("wheel_radius").as_double();
     track_width = get_parameter("track_width").as_double();
     motor_cmd_max = get_parameter("motor_cmd_max").as_int();
     motor_cmd_per_rad_sec = get_parameter("motor_cmd_per_rad_sec").as_double();

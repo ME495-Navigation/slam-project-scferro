@@ -12,7 +12,7 @@ Task B.2 - Geometry unit tests: COMPLETE
 Task B.3 - se2d geometry: COMPLETE
 Task B.4 - se2d geometry unit tests: COMPLETE
 Task B.5 - Visualization: COMPLETE
-Task B.6 - Create frame_main.cpp: IN PROGRESS
+Task B.6 - Create frame_main.cpp: COMPLETE
 Task B.7 - Create README file for turtlelib: COMPLETE
 Task B.8 - Add vector operations: COMPLETE
 Task B.9 - Add integrate_twist function: COMPLETE
@@ -24,6 +24,7 @@ Task C.4 - Add walls: COMPLETE
 Task C.5 - Add obstacles: COMPLETE
 Task C.6 - Create launch file: COMPLETE
 Task C.7 - Create README file for nusim: COMPLETE
+Task C.8 - Add control of turtle with wheel_cmd: COMPLETE
 
 Task D.1 - Create DiffDrive Class: COMPLETE
 Task D.2 - Create DiffDrive tests: COMPLETE
@@ -31,4 +32,6 @@ Task D.3 - Diff Drive Documentation: IN PROGRESS
 
 Task E.1 - Create turtle_control node: COMPLETE
 Task E.2 - Create odometry node: COMPLETE
-Task E.3 - Create circle node: IN PROGRESS
+Task E.3 - Create circle node: COMPLETE
+Task E.4 - ROS2 API Testing: IN PROGRESS
+Task E.4 - Launchfile: IN PROGRESS

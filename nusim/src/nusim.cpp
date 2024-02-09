@@ -11,6 +11,8 @@
 ///     obstacles/r (double): radius of all cylindrical obstacles (m)
 ///     arena_x_length: X length of rectangular arena (m)
 ///     arena_y_length: Y length of rectangular arena (m)
+/// SUBSCRIBES:
+///     ~/red/wheel_cmd (int): the commands for the wheel motors
 /// PUBLISHES:
 ///     ~/timestep (std_msgs::msg::Uint64): current timestep of simulation
 ///     ~/obstacles (visualization_msgs::msg::MarkerArray): marker objects representing cylinders
@@ -38,6 +40,9 @@
 #include "nusim/srv/teleport.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_ros/transform_broadcaster.h"
+#include "nuturtlebot_msgs/msg/sensor_data.hpp"
+#include "nuturtlebot_msgs/msg/wheel_commands.hpp"
+#include "turtlelib/diff_drive.hpp"
 
 using namespace std::chrono_literals;
 
@@ -45,7 +50,7 @@ class Nusim : public rclcpp::Node
 {
 public:
   Nusim()
-  : Node("nusim"), timestep(0)
+  : Node("nusim"),
   {
     // Parameters and default values
     declare_parameter("rate", 200);
@@ -57,6 +62,9 @@ public:
     declare_parameter("obstacles_x", std::vector<double>{});
     declare_parameter("obstacles_y", std::vector<double>{});
     declare_parameter("obstacles_radius", 0.038);
+    declare_parameter("max_wheel_vel", 2.84)
+    declare_parameter("wheel_radius", 0.066);
+    declare_parameter("track_width", 0.160);
 
     // Define parameter variables
     rate = get_parameter("rate").as_int();
@@ -68,11 +76,22 @@ public:
     obstacles_x = get_parameter("obstacles_x").as_double_array();
     obstacles_y = get_parameter("obstacles_y").as_double_array();
     obstacles_radius = get_parameter("obstacles_radius").as_double();
+    max_wheel_vel = get_parameter("max_wheel_vel").as_double();
+    wheel_radius = get_parameter("wheel_radius").as_double();
+    track_width = get_parameter("track_width").as_double();
+
+    // Create diff_drive
+    diff_drive = DiffDrive(wheel_radius, track_width);
 
     // Publishers
     timestep_publisher = create_publisher<std_msgs::msg::UInt64>("~/timestep", 10);
     obstacle_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/obstacles", 10);
     walls_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", 10);
+
+    // Subscribers
+    wheel_cmd_sub = create_subscriber<nuturtlebot_msgs::msg::WheelCommands>(
+      "~/red/wheel_cmd",
+      10, std::bind(&MinimalSubscriber::wheel_cmd_callback, this, _1));
 
     // Transform broadcaster
     tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -101,10 +120,16 @@ private:
   double theta0;
   double arena_x_length;
   double arena_y_length;
+  double wheel_radius, track_width;
+  double right_wheel_vel, left_wheel_vel, max_wheel_vel;
+  DiffDrive diff_drive;
   std::vector<double> obstacles_x;
   std::vector<double> obstacles_y;
   double obstacles_radius;
   double x_gt, y_gt, theta_gt;
+
+  right_wheel_vel = 0.;
+  left_wheel_vel = 0.;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr main_timer;
@@ -114,35 +139,86 @@ private:
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_server;
   rclcpp::Service<nusim::srv::Teleport>::SharedPtr teleport_server;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
+  rclcpp::Subscription<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr wheel_cmd_sub;
 
   /// \brief The main timer callback function, publishes the current timestep, broadcasts groundtruth transform
   void timer_callback()
   {
-
-    // Publish the current timestep
+    geometry_msgs::msg::TransformStamped tf_base, tf_left_wheel, tf_right_wheel;
+    tf2::Quaternion quat_robot, quat_left, quat_right;
     auto message = std_msgs::msg::UInt64();
-    timestep_publisher->publish(message);
+    double delta_left_wheel, delta_right_wheel, left_wheel_angle, right_wheel_angle;
+    std::vector<double> wheel_angles, state;
+    Transform2D body_tf;
 
     // Add the timestep to the message
     message.data = timestep;
 
-    // Publish gt transforms
-    geometry_msgs::msg::TransformStamped tf;
-    tf.header.stamp = get_clock()->now();
-    tf.header.frame_id = "nusim/world";
-    tf.child_frame_id = "red/base_footprint";
-    tf.transform.translation.x = x_gt;
-    tf.transform.translation.y = y_gt;
-    tf.transform.translation.z = 0.0;
+    // Publish the current timestep
+    timestep_publisher->publish(message);
 
-    tf2::Quaternion quaternion;
-    quaternion.setRPY(0, 0, theta_gt);
-    tf.transform.rotation.x = quaternion.x();
-    tf.transform.rotation.y = quaternion.y();
-    tf.transform.rotation.z = quaternion.z();
-    tf.transform.rotation.w = quaternion.w();
+    // Calculate wheel position change
+    delta_left_wheel = left_wheel_vel/rate;
+    delta_right_wheel = right_wheel_vel/rate;
 
-    tf_broadcaster->sendTransform(tf);
+    // Find new wheel positions
+    wheel_angles = diff_drive.return_wheels();
+    left_wheel_angle = wheel_angles[0] + delta_left_wheel;
+    right_wheel_angle = wheel_angles[1] + delta_right_wheel;
+
+    // Update diff_drive state
+    wheel_angles = diff_drive.return_wheels();
+    body_tf = diff_drive.update_state(left_wheel_angle, right_wheel_angle);
+    state = diff_drive.return_state();
+    x_gt = state[0];
+    y_gt = state[1];
+    theta_gt = state[2];
+
+    // Create base link gt transforms
+    tf_base.header.stamp = get_clock()->now();
+    tf_base.header.frame_id = "nusim/world";
+    tf_base.child_frame_id = "red/base_footprint";
+    tf_base.transform.translation.x = x_gt;
+    tf_base.transform.translation.y = y_gt;
+    tf_base.transform.translation.z = 0.0;
+
+    quat_robot.setRPY(0, 0, theta_gt);
+    tf_base.transform.rotation.x = quat_robot.x();
+    tf_base.transform.rotation.y = quat_robot.y();
+    tf_base.transform.rotation.z = quat_robot.z();
+    tf_base.transform.rotation.w = quat_robot.w();
+
+    // Create wheel transforms
+    tf_left_wheel.header.stamp = get_clock()->now();
+    tf_right_wheel.header.frame_id = "red/wheel_right_link";
+    tf_right_wheel.child_frame_id = "red/wheel_right_link";
+    tf_left_wheel.transform.translation.x = 0.0;
+    tf_left_wheel.transform.translation.y = 0.0;
+    tf_left_wheel.transform.translation.z = 0.0;
+
+    tf_right_wheel.header.stamp = get_clock()->now();
+    tf_right_wheel.header.frame_id = "red/wheel_left_link";
+    tf_right_wheel.child_frame_id = "red/wheel_left_link";
+    tf_right_wheel.transform.translation.x = 0.0;
+    tf_right_wheel.transform.translation.y = 0.0;
+    tf_right_wheel.transform.translation.z = 0.0;
+
+    quat_left.setRPY(0, 0, delta_left_wheel);
+    tf_left_wheel.transform.rotation.x = quat_left.x();
+    tf_left_wheel.transform.rotation.y = quat_left.y();
+    tf_left_wheel.transform.rotation.z = quat_left.z();
+    tf_left_wheel.transform.rotation.w = quat_left.w();
+
+    quat_right.setRPY(0, 0, delta_right_wheel);
+    tf_right_wheel.transform.rotation.x = quat_right.x();
+    tf_right_wheel.transform.rotation.y = quat_right.y();
+    tf_right_wheel.transform.rotation.z = quat_right.z();
+    tf_right_wheel.transform.rotation.w = quat_right.w();
+
+    // Publish transforms
+    tf_broadcaster->sendTransform(tf_left_wheel);
+    tf_broadcaster->sendTransform(tf_right_wheel);
+    tf_broadcaster->sendTransform(tf_base);
 
     // Publish walls
     publish_walls();
@@ -152,6 +228,13 @@ private:
 
     // Increase timestep
     timestep++;
+  }
+
+  /// \brief The wheel_cmd callback function, updates wheel speeds and robot ground truth position
+  void wheel_cmd_callback(const nuturtlebot_msgs::msg::WheelCommands & msg)
+  {
+    left_wheel_vel = (msg.left_velocity / 265) * max_wheel_vel;
+    right_wheel_vel = (msg.right_velocity / 265) * max_wheel_vel;
   }
 
   /// \brief Reset the simulation

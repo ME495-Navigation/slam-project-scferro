@@ -60,6 +60,9 @@ public:
     encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_double();
     collision_radius = get_parameter("collision_radius").as_double();
 
+    // Create diff_drive
+    diff_drive = DiffDrive(wheel_radius, track_width);
+
     // Transform broadcaster
     tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
@@ -94,7 +97,7 @@ private:
   double left_wheel_angle, right_wheel_angle, left_wheel_speed, right_wheel_speed;
   std::string body_id, odom_id, wheel_left, wheel_right;
   int PID_rate;
-  DiffDrive diff_drive = DiffDrive(wheel_radius, track_width)
+  DiffDrive diff_drive;
 
     PID_rate = 10;
   left_wheel_angle = 0.0;
