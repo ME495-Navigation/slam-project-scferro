@@ -38,8 +38,8 @@ public:
     declare_parameter("odom_id", "odom");
     declare_parameter("wheel_left", "");
     declare_parameter("wheel_right", "");
-    declare_parameter("wheel_radius", 1.0);
-    declare_parameter("track_width", 1.0);
+    declare_parameter("wheel_radius", -1.0);
+    declare_parameter("track_width", -1.0);
     declare_parameter("motor_cmd_max", 1.0);
     declare_parameter("motor_cmd_per_rad_sec", 1.0);
     declare_parameter("encoder_ticks_per_rad", 1);
@@ -57,6 +57,14 @@ public:
     encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_int();
     collision_radius = get_parameter("collision_radius").as_double();
 
+    // Check if parameters have been defined. if not, throw runtime error
+    if (wheel_radius == -1.0 || wheel_radius == -1.0) {
+      throw std::runtime_error("Diff drive parameters not defined.");
+    }
+    if (body_id == "" || wheel_left == "" || wheel_right == "") {
+      throw std::runtime_error("Frame parameters not defined.");
+    }
+
     // Define other variables
     loop_rate = 10;
     left_wheel_angle = 0.0;
@@ -65,7 +73,7 @@ public:
     right_wheel_speed = 0.0;
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
 
-    // Create diff_drive
+    // Create diff_drive object
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
 
     // Transform broadcaster
@@ -82,7 +90,9 @@ public:
     // Services
     initial_pose_srv = create_service<nuturtle_control::srv::Pose>(
       "~/initial_pose",
-      std::bind(&Odometry::initial_pose_callback, this, std::placeholders::_1, std::placeholders::_2));
+      std::bind(
+        &Odometry::initial_pose_callback, this, std::placeholders::_1,
+        std::placeholders::_2));
 
     // Main timer
     int cycle_time = 1000.0 / loop_rate;
@@ -191,7 +201,6 @@ private:
     left_wheel_speed = 0.0;
     right_wheel_speed = 0.0;
   }
-
 };
 
 int main(int argc, char ** argv)

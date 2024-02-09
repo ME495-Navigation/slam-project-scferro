@@ -157,8 +157,8 @@ private:
     timestep_publisher->publish(message);
 
     // Calculate wheel position change
-    delta_left_wheel = left_wheel_vel/rate;
-    delta_right_wheel = right_wheel_vel/rate;
+    delta_left_wheel = left_wheel_vel / rate;
+    delta_right_wheel = right_wheel_vel / rate;
 
     // Find new wheel positions
     wheel_angles = diff_drive.return_wheels();

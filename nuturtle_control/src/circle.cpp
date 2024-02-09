@@ -77,12 +77,12 @@ private:
   void timer_callback()
   {
     geometry_msgs::msg::Twist vel_command;
-    if(state == 1) {
+    if (state == 1) {
       // Create velocity command moving in reverse
       vel_command.linear.x = -linear_velocity;
       vel_command.linear.y = 0.0;
       vel_command.angular.z = angular_velocity;
-    } 
+    }
     // Publish command
     cmd_vel_pub->publish(vel_command);
   }
@@ -122,14 +122,14 @@ private:
     // Extract the angular velocity and radius commands
     angular_velocity = request->velocity;
     radius = request->radius;
-    
+
     // Update the linear velocity command
     linear_velocity = radius * angular_velocity;
     RCLCPP_INFO(this->get_logger(), "Robot radius and velocity updated.");
 
     // If stopped, start the robot moving forward
-    if(state == 0) {
-        state = 1;
+    if (state == 0) {
+      state = 1;
     }
   }
 };

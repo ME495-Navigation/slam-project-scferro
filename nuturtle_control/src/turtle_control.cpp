@@ -33,8 +33,8 @@ public:
   : Node("turtle_control")
   {
     // Parameters and default values
-    declare_parameter("wheel_radius", 1.0);
-    declare_parameter("track_width", 1.0);
+    declare_parameter("wheel_radius", -1.0);
+    declare_parameter("track_width", -1.0);
     declare_parameter("motor_cmd_max", 1.0);
     declare_parameter("motor_cmd_per_rad_sec", 1.0);
     declare_parameter("encoder_ticks_per_rad", 1.0);
@@ -47,6 +47,11 @@ public:
     motor_cmd_per_rad_sec = get_parameter("motor_cmd_per_rad_sec").as_double();
     encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_double();
     collision_radius = get_parameter("collision_radius").as_double();
+
+    // Check if parameters have been defined. if not, throw runtime error
+    if (wheel_radius == -1.0 || wheel_radius == -1.0) {
+      throw std::runtime_error("Diff drive parameters not defined.");
+    }
 
     // Define other variables
     left_encoder_ticks_prev = 0;
@@ -168,8 +173,7 @@ private:
   {
     if (wheel_cmd > motor_cmd_max) {
       wheel_cmd = motor_cmd_max;
-    }
-    else if(wheel_cmd < -motor_cmd_max) {
+    } else if (wheel_cmd < -motor_cmd_max) {
       wheel_cmd = -motor_cmd_max;
     }
 
@@ -222,4 +226,3 @@ int main(int argc, char ** argv)
   rclcpp::shutdown();
   return 0;
 }
-
