@@ -15,16 +15,13 @@
 #include <string>
 
 #include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/u_int64.hpp"
-#include "sensor_msgs/msg/JointState.hpp"
-#include "nav_msgs/msg/Odometry.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "turtlelib/geometry2d.hpp"
 #include "turtlelib/se2d.hpp"
 #include "turtlelib/diff_drive.hpp"
-#include "nusim/srv/teleport.hpp"
+#include "nuturtle_control/srv/pose.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
-#include "geometry_msgs/msg/TwistWithCovariance.hpp"
-#include "geometry_msgs/msg/PoseWithCovariance.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_ros/transform_broadcaster.h"
 
@@ -34,19 +31,19 @@ class Odometry : public rclcpp::Node
 {
 public:
   Odometry()
-  : Node("odometry"), 
+  : Node("odometry")
   {
     // Parameters and default values
-    declare_parameter("body_id", None);
-    declare_parameter("odom_id", 'odom');
-    declare_parameter("wheel_left", None);
-    declare_parameter("wheel_right", None);
-    declare_parameter("wheel_radius", None);
-    declare_parameter("track_width", None);
-    declare_parameter("motor_cmd_max", None);
-    declare_parameter("motor_cmd_per_rad_sec", None);
-    declare_parameter("encoder_ticks_per_rad", None);
-    declare_parameter("collision_radius", None);
+    declare_parameter("body_id", "");
+    declare_parameter("odom_id", "odom");
+    declare_parameter("wheel_left", "");
+    declare_parameter("wheel_right", "");
+    declare_parameter("wheel_radius", 1.0);
+    declare_parameter("track_width", 1.0);
+    declare_parameter("motor_cmd_max", 1.0);
+    declare_parameter("motor_cmd_per_rad_sec", 1.0);
+    declare_parameter("encoder_ticks_per_rad", 1);
+    declare_parameter("collision_radius", 1.0);
 
     // Define parameter variables
     body_id = get_parameter("body_id").as_string();
@@ -57,11 +54,19 @@ public:
     track_width = get_parameter("track_width").as_double();
     motor_cmd_max = get_parameter("motor_cmd_max").as_int();
     motor_cmd_per_rad_sec = get_parameter("motor_cmd_per_rad_sec").as_double();
-    encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_double();
+    encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_int();
     collision_radius = get_parameter("collision_radius").as_double();
 
+    // Define other variables
+    loop_rate = 10;
+    left_wheel_angle = 0.0;
+    right_wheel_angle = 0.0;
+    left_wheel_speed = 0.0;
+    right_wheel_speed = 0.0;
+    diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
+
     // Create diff_drive
-    diff_drive = DiffDrive(wheel_radius, track_width);
+    diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
 
     // Transform broadcaster
     tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -70,45 +75,39 @@ public:
     odom_pub = create_publisher<nav_msgs::msg::Odometry>("~/odom", 10);
 
     // Subscribers
-    joint_state_sub = create_subscriber<sensor_msgs::msg::JointState>(
+    joint_state_sub = create_subscription<sensor_msgs::msg::JointState>(
       "~/joint_states",
-      10, std::bind(&MinimalSubscriber::joint_state_callback, this, _1));
+      10, std::bind(&Odometry::joint_state_callback, this, std::placeholders::_1));
 
     // Services
-    initial_pose = create_service<nusim::srv::Teleport>(
+    initial_pose_srv = create_service<nuturtle_control::srv::Pose>(
       "~/initial_pose",
-      std::bind(&O::initial_pose_callback, this, std::placeholders::_1, std::placeholders::_2));
+      std::bind(&Odometry::initial_pose_callback, this, std::placeholders::_1, std::placeholders::_2));
 
     // Main timer
-    int cycle_time = 1000.0 / PID_rate;
+    int cycle_time = 1000.0 / loop_rate;
     main_timer = this->create_wall_timer(
-      std::chrono::milliseconds(10),
+      std::chrono::milliseconds(cycle_time),
       std::bind(&Odometry::timer_callback, this));
   }
 
 private:
   // Initialize parameter variables
+  int rate;
   double wheel_radius;
   double track_width;
   uint32_t motor_cmd_max;
   double motor_cmd_per_rad_sec;
-  double encoder_ticks_per_rad;
+  int encoder_ticks_per_rad;
   double collision_radius;
   double left_wheel_angle, right_wheel_angle, left_wheel_speed, right_wheel_speed;
   std::string body_id, odom_id, wheel_left, wheel_right;
-  int PID_rate;
-  DiffDrive diff_drive;
+  int loop_rate;
+  turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(1.0, 1.0);
 
-    PID_rate = 10;
-  left_wheel_angle = 0.0;
-  right_wheel_angle = 0.0;
-  left_wheel_speed = 0.0;
-  right_wheel_speed = 0.0;
-
-  // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub;
-  rclcpp::Service<nusim::srv::Teleport>::SharedPtr initial_pose;
+  rclcpp::Service<nuturtle_control::srv::Pose>::SharedPtr initial_pose_srv;
   rclcpp::TimerBase::SharedPtr main_timer;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
 
@@ -116,15 +115,15 @@ private:
   void timer_callback()
   {
     // Get transform and twist based on wheel positions
-    Transform2D body_tf;
-    Twist2D body_twist;
-    Vector2D position;
+    turtlelib::Transform2D body_tf;
+    turtlelib::Twist2D body_twist;
+    turtlelib::Vector2D position;
     tf2::Quaternion quaternion;
 
     body_twist = diff_drive.get_twist(left_wheel_angle, right_wheel_angle);
     body_tf = diff_drive.update_state(left_wheel_angle, right_wheel_angle);
-    position = body_tf::translation();
-    quaternion.setRPY(0, 0, body_tf.rot);
+    position = body_tf.translation();
+    quaternion.setRPY(0, 0, body_tf.rotation());
 
     // Create odom message
     nav_msgs::msg::Odometry odom_msg;
@@ -157,7 +156,6 @@ private:
     tf.transform.translation.y = 0.0;
     tf.transform.translation.z = 0.0;
 
-    tf2::Quaternion quaternion;
     quaternion.setRPY(0, 0, 0);
     tf.transform.rotation.x = quaternion.x();
     tf.transform.rotation.y = quaternion.y();
@@ -167,37 +165,27 @@ private:
     tf_broadcaster->sendTransform(tf);
   }
 
-  /// \brief The sensor_data callback function, publishes the current joint_states of the wheels based on received sensor_data
+  /// \brief The joint_state callback function, updates the stored wheel position
   void joint_state_callback(const sensor_msgs::msg::JointState & msg)
   {
     // Extract new wheel data from message
-    double position, velocity;
-    std::string joint;
-    position = msg.position;
-    velocity = msg.velocity;
-    joint = msg.name;
-
-    if (joint == wheel_left) {
-      left_wheel_angle = position;
-    }
-    elif(joint == wheel_right) {
-      right_wheel_angle = position;
-    }
+    left_wheel_angle = msg.position[0];
+    right_wheel_angle = msg.position[1];
   }
 
   /// \brief Reset the turtlebot to a specified position and orientation
   /// \param request The desired x,y position and theta orientation of the robot
   void initial_pose_callback(
-    nusim::srv::Teleport::Request::SharedPtr request,
-    nusim::srv::Teleport::Response::SharedPtr)
+    nuturtle_control::srv::Pose::Request::SharedPtr request,
+    nuturtle_control::srv::Pose::Response::SharedPtr)
   {
     // Extract desired x, y, theta
-    x = request->x;
-    y = request->y;
-    theta = request->theta;
+    double x = request->x;
+    double y = request->y;
+    double theta = request->theta;
 
     // Update diff_drive with new DiffDrive object at specified position
-    diff_drive = DiffDrive(wheel_radius, track_width, x, y, theta);
+    diff_drive = turtlelib::DiffDrive(wheel_radius, track_width, x, y, theta);
     left_wheel_angle = 0.0;
     right_wheel_angle = 0.0;
     left_wheel_speed = 0.0;

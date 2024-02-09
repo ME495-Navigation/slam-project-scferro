@@ -17,7 +17,7 @@
 #include "std_msgs/msg/u_int64.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/vector3.hpp"
-#include "sensor_msgs/msg/JointState.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
 #include "nuturtlebot_msgs/msg/sensor_data.hpp"
 #include "nuturtlebot_msgs/msg/wheel_commands.hpp"
 #include "turtlelib/geometry2d.hpp"
@@ -30,15 +30,15 @@ class Turtle_Control : public rclcpp::Node
 {
 public:
   Turtle_Control()
-  : Node("turtle_control"), 
+  : Node("turtle_control")
   {
     // Parameters and default values
-    declare_parameter("wheel_radius", None);
-    declare_parameter("track_width", None);
-    declare_parameter("motor_cmd_max", None);
-    declare_parameter("motor_cmd_per_rad_sec", None);
-    declare_parameter("encoder_ticks_per_rad", None);
-    declare_parameter("collision_radius", None);
+    declare_parameter("wheel_radius", 1.0);
+    declare_parameter("track_width", 1.0);
+    declare_parameter("motor_cmd_max", 1.0);
+    declare_parameter("motor_cmd_per_rad_sec", 1.0);
+    declare_parameter("encoder_ticks_per_rad", 1.0);
+    declare_parameter("collision_radius", 1.0);
 
     // Define parameter variables
     wheel_radius = get_parameter("wheel_radius").as_double();
@@ -48,34 +48,48 @@ public:
     encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_double();
     collision_radius = get_parameter("collision_radius").as_double();
 
+    // Define other variables
+    left_encoder_ticks_prev = 0;
+    right_encoder_ticks_prev = 0;
+    wheel_speed_cum_error_left = 0.0;
+    wheel_speed_cum_error_right = 0.0;
+    wheel_speed_error_left_prev = 0.0;
+    wheel_speed_error_right_prev = 0.0;
+    PID_rate = 100;
+    P = 1.0;
+    I = 0.0;
+    D = 0.0;
+
+    // Initiallize timers
+    rclcpp::Time time_start = this->get_clock()->now();
+    time_prev_sensor = ((double)(time_start.nanoseconds()) * 0.000000001);
+
     // Publishers
     wheel_cmd_pub = create_publisher<nuturtlebot_msgs::msg::WheelCommands>("~/wheel_cmd", 10);
     joint_states_pub = create_publisher<sensor_msgs::msg::JointState>("~/joint_states", 10);
 
     // Subscribers
-    cmd_vel_sub = create_subscriber<geometry_msgs::msg::Twist>(
+    cmd_vel_sub = create_subscription<geometry_msgs::msg::Twist>(
       "~/cmd_vel",
-      10, std::bind(&MinimalSubscriber::cmd_vel_callback, this, _1));
-    sensor_data_sub = create_subscriber<nuturtlebot_msgs::msg::SensorData>(
+      10, std::bind(&Turtle_Control::cmd_vel_callback, this, std::placeholders::_1));
+    sensor_data_sub = create_subscription<nuturtlebot_msgs::msg::SensorData>(
       "~/sensor_data",
-      10, std::bind(&MinimalSubscriber::sensor_data_callback, this, _1));
+      10, std::bind(&Turtle_Control::sensor_data_callback, this, std::placeholders::_1));
 
     // Main timer
     int cycle_time = 1000.0 / PID_rate;
     main_timer = this->create_wall_timer(
-      std::chrono::milliseconds(10),
+      std::chrono::milliseconds(cycle_time),
       std::bind(&Turtle_Control::timer_callback, this));
   }
 
 private:
   // Initialize parameter variables
-  double wheel_radius;
-  double track_width;
-  uint32_t motor_cmd_max;
-  double motor_cmd_per_rad_sec;
-  double encoder_ticks_per_rad;
-  double collision_radius;
-  vector<double> target_wheel_speeds[2];
+  int rate;
+  double wheel_radius, track_width;
+  int motor_cmd_max;
+  double motor_cmd_per_rad_sec, encoder_ticks_per_rad, collision_radius;
+  std::vector<double> target_wheel_speeds = {0.0, 0.0};
   uint64_t left_encoder_ticks, right_encoder_ticks, left_encoder_ticks_prev,
     right_encoder_ticks_prev;
   double time_now_sensor, time_prev_sensor;
@@ -86,22 +100,6 @@ private:
     wheel_speed_cum_error_left, wheel_speed_cum_error_right;
   double P, I, D;
   int PID_rate;
-
-  target_wheel_speeds = {0.0, 0.0}
-  left_encoder_ticks_prev = 0;
-  right_encoder_ticks_prev = 0;
-  wheel_speed_cum_error_left = 0.0;
-  wheel_speed_cum_error_right = 0.0;
-  wheel_speed_error_left_prev = 0.0;
-  wheel_speed_error_right_prev = 0.0;
-  PID_rate = 100;
-  P = 1.0;
-  I = 0.0;
-  D = 0.0;
-
-  // Initiallize timers
-  rclcpp::Time time_start = this->get_clock()->now();
-  time_prev_sensor = (double)(time_start.sec) + ((double)(time_start.nanosec) * 0.000000001);
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::Publisher<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr wheel_cmd_pub;
@@ -114,14 +112,14 @@ private:
   void cmd_vel_callback(const geometry_msgs::msg::Twist & msg)
   {
     // Initialize local variables and messages
-    Twist2D twist;
+    turtlelib::Twist2D twist;
 
     // Create DiffDrive object
-    DiffDrive diff_drive = DiffDrive(wheel_radius, track_width);
+    turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
 
     // Extract forward and angular velocities from twist
-    twist.trans.x = msg.linear.x;
-    twist.rot = msg.angular.z;
+    twist.x = msg.linear.x;
+    twist.omega = msg.angular.z;
 
     // Find desired wheel speeds using IK
     target_wheel_speeds = diff_drive.inverse_kinematics(twist);
@@ -133,7 +131,7 @@ private:
     // Initialize local variables and messages
     double left_wheel_accel_error, right_wheel_accel_error;
     int wheel_cmd_left, wheel_cmd_right;
-    sensor_msgs::msg::JointState wheel_commands;
+    nuturtlebot_msgs::msg::WheelCommands wheel_commands;
 
     // Calculate wheel speed errors
     wheel_speed_error_left = target_wheel_speeds[0] - wheel_speed_left;
@@ -171,7 +169,7 @@ private:
     if (wheel_cmd > motor_cmd_max) {
       wheel_cmd = motor_cmd_max;
     }
-    elif(wheel_cmd < -motor_cmd_max) {
+    else if(wheel_cmd < -motor_cmd_max) {
       wheel_cmd = -motor_cmd_max;
     }
 
@@ -182,7 +180,7 @@ private:
   void sensor_data_callback(const nuturtlebot_msgs::msg::SensorData & msg)
   {
     // Initialize local variables and messages
-    sensor_msgs::msg::JointState left_wheel_state, right_wheel_state;
+    sensor_msgs::msg::JointState wheel_state;
 
     // Read encoder positions and time from msg and calculate angles
     left_encoder_ticks = msg.left_encoder;
@@ -197,13 +195,14 @@ private:
     wheel_speed_right = ((right_encoder_ticks - right_encoder_ticks_prev) / encoder_ticks_per_rad) /
       (time_now_sensor - time_prev_sensor);
 
+    // Add headers to JointStates
+    wheel_state.header.stamp = get_clock()->now();
+    wheel_state.header.frame_id = {"wheel_left_joint", "wheel_right_joint"};
+
     // Enter information into joint state messages
-    left_wheel_state.name = 'wheel_left_joint';
-    left_wheel_state.position = angle_left_wheel;
-    left_wheel_state.velocity = wheel_speed_left;
-    right_wheel_state.name = 'wheel_right_joint';
-    right_wheel_state.position = angle_right_wheel;
-    right_wheel_state.velocity = wheel_speed_right;
+    wheel_state.name = {"wheel_left_joint", "wheel_right_joint"};
+    wheel_state.position = {angle_left_wheel, angle_right_wheel};
+    wheel_state.velocity = {wheel_speed_left, wheel_speed_right};
 
     // Update time_prev_sensor and encoders prev
     time_prev_sensor = time_now_sensor;
@@ -211,10 +210,8 @@ private:
     right_encoder_ticks_prev = right_encoder_ticks;
 
     // Publish joint states for both wheels
-    joint_states_pub->publish(left_wheel_state);
-    joint_states_pub->publish(right_wheel_state);
+    joint_states_pub->publish(wheel_state);
   }
-
 };
 
 int main(int argc, char ** argv)
@@ -225,3 +222,4 @@ int main(int argc, char ** argv)
   rclcpp::shutdown();
   return 0;
 }
+

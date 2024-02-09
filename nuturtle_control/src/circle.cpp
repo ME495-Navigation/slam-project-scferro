@@ -15,7 +15,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/u_int64.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "std_srvs/srv/Empty.hpp"
+#include "std_srvs/srv/empty.hpp"
+#include "nuturtle_control/srv/control.hpp"
 #include "turtlelib/geometry2d.hpp"
 #include "turtlelib/se2d.hpp"
 #include "turtlelib/diff_drive.hpp"
@@ -25,14 +26,8 @@ using namespace std::chrono_literals;
 class Circle : public rclcpp::Node
 {
 public:
-  enum class State {
-      STOPPED,
-      FORWARD,
-      REVERSE
-  };
-
   Circle()
-  : Node("circle"), state(State::STOPPED)
+  : Node("circle")
   {
     // Parameters and default values
     declare_parameter("angular_velocity", 0.1);
@@ -43,7 +38,7 @@ public:
     angular_velocity = get_parameter("angular_velocity").as_double();
     radius = get_parameter("radius").as_double();
     frequency = get_parameter("frequency").as_int();
-    linear_velocity = abs(radius * angular_velocity);
+    linear_velocity = radius * angular_velocity;
 
     // Publishers
     cmd_vel_pub = create_publisher<geometry_msgs::msg::Twist>("~/cmd_vel", 10);
@@ -62,38 +57,32 @@ public:
     // Main timer
     int cycle_time = 1000.0 / frequency;
     main_timer = this->create_wall_timer(
-      std::chrono::milliseconds(10),
+      std::chrono::milliseconds(cycle_time),
       std::bind(&Circle::timer_callback, this));
   }
 
 private:
   // Initialize parameter variables
   double angular_velocity, linear_velocity, radius;
-  uint_32 frequency;
-  State state;
+  int frequency;
+  int state = 1;
 
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub;
   rclcpp::TimerBase::SharedPtr main_timer;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reverse;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr stop;
-  rclcpp::Service<nusim::srv::Teleport>::SharedPtr control;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reverse_srv;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr stop_srv;
+  rclcpp::Service<nuturtle_control::srv::Control>::SharedPtr control_srv;
 
   /// \brief The main timer callback, publishes velocity commands
   void timer_callback()
   {
     geometry_msgs::msg::Twist vel_command;
-    if(state == State::REVERSE) {
+    if(state == 1) {
       // Create velocity command moving in reverse
       vel_command.linear.x = -linear_velocity;
       vel_command.linear.y = 0.0;
       vel_command.angular.z = angular_velocity;
-    }
-    elif(state == State::FORWARD) {
-      // Create velocity command moving forward
-      vel_command.linear.x = linear_velocity;
-      vel_command.linear.y = 0.0;
-      vel_command.angular.z = angular_velocity;
-    }
+    } 
     // Publish command
     cmd_vel_pub->publish(vel_command);
   }
@@ -104,7 +93,7 @@ private:
     std_srvs::srv::Empty::Response::SharedPtr)
   {
     // Set state to STOPPED
-    state = State::STOPPED;
+    state = 0;
     RCLCPP_INFO(this->get_logger(), "Robot stopped.");
 
     // Publish one cmd_vel command with 0 velocity
@@ -120,15 +109,8 @@ private:
     std_srvs::srv::Empty::Request::SharedPtr,
     std_srvs::srv::Empty::Response::SharedPtr)
   {
-    // If robot is moving, reverse the direction
-    if(state == State::REVERSE) {
-        state = State::FORWARD;
-        RCLCPP_INFO(this->get_logger(), "Robot direction changed.");
-    }
-    elif(state == State::FORWARD) {
-        state = State::REVERSE;
-        RCLCPP_INFO(this->get_logger(), "Robot direction changed.");
-    }
+    // Change the direction of the robot
+    linear_velocity = -linear_velocity;
   }
 
   /// \brief Set the radius and angular velocity of the robot
@@ -138,17 +120,16 @@ private:
     nuturtle_control::srv::Control::Response::SharedPtr)
   {
     // Extract the angular velocity and radius commands
-    velocity = request.velocity;
-    radius = request.radius;
+    angular_velocity = request->velocity;
+    radius = request->radius;
     
     // Update the linear velocity command
-    linear_velocity = abs(radius * angular_velocity);
+    linear_velocity = radius * angular_velocity;
     RCLCPP_INFO(this->get_logger(), "Robot radius and velocity updated.");
 
     // If stopped, start the robot moving forward
-    if(state == State::STOPPED) {
-        state = State::FORWARD;
-        RCLCPP_INFO(this->get_logger(), "Robot moving forward.");
+    if(state == 0) {
+        state = 1;
     }
   }
 };

@@ -50,7 +50,7 @@ class Nusim : public rclcpp::Node
 {
 public:
   Nusim()
-  : Node("nusim"),
+  : Node("nusim")
   {
     // Parameters and default values
     declare_parameter("rate", 200);
@@ -62,7 +62,7 @@ public:
     declare_parameter("obstacles_x", std::vector<double>{});
     declare_parameter("obstacles_y", std::vector<double>{});
     declare_parameter("obstacles_radius", 0.038);
-    declare_parameter("max_wheel_vel", 2.84)
+    declare_parameter("max_wheel_vel", 2.84);
     declare_parameter("wheel_radius", 0.066);
     declare_parameter("track_width", 0.160);
 
@@ -80,8 +80,10 @@ public:
     wheel_radius = get_parameter("wheel_radius").as_double();
     track_width = get_parameter("track_width").as_double();
 
-    // Create diff_drive
-    diff_drive = DiffDrive(wheel_radius, track_width);
+    // Create diff_drive, initialize wheel speeds
+    diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
+    right_wheel_vel = 0.;
+    left_wheel_vel = 0.;
 
     // Publishers
     timestep_publisher = create_publisher<std_msgs::msg::UInt64>("~/timestep", 10);
@@ -89,9 +91,9 @@ public:
     walls_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", 10);
 
     // Subscribers
-    wheel_cmd_sub = create_subscriber<nuturtlebot_msgs::msg::WheelCommands>(
+    wheel_cmd_sub = create_subscription<nuturtlebot_msgs::msg::WheelCommands>(
       "~/red/wheel_cmd",
-      10, std::bind(&MinimalSubscriber::wheel_cmd_callback, this, _1));
+      10, std::bind(&Nusim::wheel_cmd_callback, this, std::placeholders::_1));
 
     // Transform broadcaster
     tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -122,14 +124,11 @@ private:
   double arena_y_length;
   double wheel_radius, track_width;
   double right_wheel_vel, left_wheel_vel, max_wheel_vel;
-  DiffDrive diff_drive;
+  turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
   std::vector<double> obstacles_x;
   std::vector<double> obstacles_y;
   double obstacles_radius;
   double x_gt, y_gt, theta_gt;
-
-  right_wheel_vel = 0.;
-  left_wheel_vel = 0.;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr main_timer;
@@ -149,7 +148,7 @@ private:
     auto message = std_msgs::msg::UInt64();
     double delta_left_wheel, delta_right_wheel, left_wheel_angle, right_wheel_angle;
     std::vector<double> wheel_angles, state;
-    Transform2D body_tf;
+    turtlelib::Transform2D body_tf;
 
     // Add the timestep to the message
     message.data = timestep;

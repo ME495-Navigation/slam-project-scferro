@@ -13,6 +13,19 @@
   <test_depend>ament_lint_common</test_depend>
 
   <exec_depend>nuturtle_description</exec_depend>
+  <exec_depend>nusim</exec_depend>
+  <exec_depend>ros2launch</exec_depend>
+  <exec_depend>turtlelib</exec_depend>
+  <build_depend>nuturtlebot_msgs</build_depend>
+  <exec_depend>nuturtlebot_msgs</exec_depend>
+
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <buildtool_depend>rosidl_default_generators</buildtool_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>
     <build_type>ament_cmake</build_type>
