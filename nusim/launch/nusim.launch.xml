@@ -1,15 +1,19 @@
 <launch>
-  <!-- Launch nusim node -->
-  <node pkg="nusim" exec="nusim" name="nusim">
-    <param from="$(find-pkg-share nusim)/config/basic_world.yaml"/>
-  </node>
+    <!-- Arguments -->
+    <arg name="config_file" default="basic_world.yaml"/>
+    <arg name="use_rviz" default="true"/>
 
-  <!-- Run load_one.launch.py from nuturtle_description package -->
-  <include file="$(find-pkg-share nuturtle_description)/launch/load_one.launch.py">
-    <arg name="use_rviz" value="false" />
-    <arg name="color" value="red" />
-  </include>
+    <!-- Launch nusim node -->
+    <node pkg="nusim" exec="nusim" name="nusim">
+        <param from="$(find-pkg-share nusim)/config/$(var config_file)"/>
+    </node>
 
-  <!-- Launch RViz -->
-  <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nusim)/config/nusim.rviz"/>
+    <!-- Run load_one.launch.py from nuturtle_description package -->
+    <include file="$(find-pkg-share nuturtle_description)/launch/load_one.launch.py">
+        <arg name="use_rviz" value="false" />
+        <arg name="color" value="red" />
+    </include>
+
+    <!-- Launch RViz -->
+    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nusim)/config/nusim.rviz" if="$(eval '\'$(var use_rviz)\' == \'true\'')"/>
 </launch>
