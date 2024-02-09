@@ -30,11 +30,11 @@
 
 using namespace std::chrono_literals;
 
-class Turtle_Control : public rclcpp::Node
+class Odometry : public rclcpp::Node
 {
 public:
-  Turtle_Control()
-  : Node("turtle_control"), timestep(0)
+  Odometry()
+  : Node("odometry"), 
   {
     // Parameters and default values
     declare_parameter("body_id", None);
@@ -74,13 +74,13 @@ public:
     // Services
     initial_pose = create_service<nusim::srv::Teleport>(
       "~/initial_pose",
-      std::bind(&Nusim::reset_callback, this, std::placeholders::_1, std::placeholders::_2));
+      std::bind(&O::initial_pose_callback, this, std::placeholders::_1, std::placeholders::_2));
 
     // Main timer
     int cycle_time = 1000.0 / PID_rate;
     main_timer = this->create_wall_timer(
       std::chrono::milliseconds(10),
-      std::bind(&Nusim::timer_callback, this));
+      std::bind(&Odometry::timer_callback, this));
   }
 
 private:
@@ -184,7 +184,7 @@ private:
 
   /// \brief Reset the turtlebot to a specified position and orientation
   /// \param request The desired x,y position and theta orientation of the robot
-  void teleport_callback(
+  void initial_pose_callback(
     nusim::srv::Teleport::Request::SharedPtr request,
     nusim::srv::Teleport::Response::SharedPtr)
   {

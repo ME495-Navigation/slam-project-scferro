@@ -30,7 +30,7 @@ class Turtle_Control : public rclcpp::Node
 {
 public:
   Turtle_Control()
-  : Node("turtle_control"), timestep(0)
+  : Node("turtle_control"), 
   {
     // Parameters and default values
     declare_parameter("wheel_radius", None);
@@ -64,7 +64,7 @@ public:
     int cycle_time = 1000.0 / PID_rate;
     main_timer = this->create_wall_timer(
       std::chrono::milliseconds(10),
-      std::bind(&Nusim::timer_callback, this));
+      std::bind(&Turtle_Control::timer_callback, this));
   }
 
 private:
