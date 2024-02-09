@@ -1,0 +1,25 @@
+<launch>
+    <-- Arguments -->
+    <arg name="cmd_src" default="circle"/>
+    <arg name="robot" default="nusim"/>
+    <arg name="use_rviz" default="true"/>
+
+    <-- Launch nusim launch file -->
+
+    <-- Launch circle node if cmd_src==circle -->
+
+    <-- Launch teleop node if cmd_src==teleop -->
+    
+    <-- Launch turtle_control node if robot==nusim -->
+    
+    <-- Launch odometry node if robot==nusim -->
+    
+    <-- Launch turtle_control node if robot==localhost -->
+    
+    <-- Launch odometry node if robot==localhost -->
+    
+    <-- Launch numsr_turtlebot node if robot==localhost -->
+    
+    <-- Launch rviz node if use_rviz==true -->
+
+</launch>
