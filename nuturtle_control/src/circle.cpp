@@ -41,17 +41,17 @@ public:
     linear_velocity = radius * angular_velocity;
 
     // Publishers
-    cmd_vel_pub = create_publisher<geometry_msgs::msg::Twist>("~/cmd_vel", 10);
+    cmd_vel_pub = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
 
     // Services
     control_srv = create_service<nuturtle_control::srv::Control>(
-      "~/control",
+      "control",
       std::bind(&Circle::control_callback, this, std::placeholders::_1, std::placeholders::_2));
     stop_srv = create_service<std_srvs::srv::Empty>(
-      "~/stop",
+      "stop",
       std::bind(&Circle::stop_callback, this, std::placeholders::_1, std::placeholders::_2));
     reverse_srv = create_service<std_srvs::srv::Empty>(
-      "~/reverse",
+      "reverse",
       std::bind(&Circle::reverse_callback, this, std::placeholders::_1, std::placeholders::_2));
 
     // Main timer

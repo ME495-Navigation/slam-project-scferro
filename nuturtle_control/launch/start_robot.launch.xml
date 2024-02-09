@@ -13,17 +13,35 @@
     <node pkg="nuturtle_control" exec="circle" if="$(eval '\'$(var cmd_src)\' == \'circle\'')"/>
 
     <!-- Launch teleop node if cmd_src==teleop -->
+    <node pkg="teleop_twist_keyboard" exec="teleop_twist_keyboard" output="screen" launch-prefix="xterm -e" if="$(eval '\'$(var cmd_src)\' == \'teleop\'')"/>
     
     <!-- Launch turtle_control node if robot==nusim -->
-    
-    <!-- Launch odometry node if robot==nusim -->
+    <node pkg="nuturtle_control" exec="turtle_control" if="$(eval '\'$(var robot)\' == \'nusim\'')">
+        <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+        <remap from="/wheel_cmd" to="red/wheel_cmd"/>
+        <remap from="/sensor_data" to="red/sensor_data"/>
+        <remap from="/joint_states" to="red/joint_states"/>
+    </node>
     
     <!-- Launch turtle_control node if robot==localhost -->
+    <node pkg="nuturtle_control" exec="turtle_control" if="$(eval '\'$(var robot)\' == \'localhost\'')">
+        <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+    </node>
     
-    <!-- Launch odometry node if robot==localhost -->
-    
+    <!-- Launch odometry node if robot==nusim -->
+    <node pkg="nuturtle_control" exec="odometry" if="$(eval '\'$(var robot)\' == \'nusim\' or \'$(var robot)\' == \'localhost\'')">
+        <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+        <param name="body_id" value="base_link" />
+        <param name="wheel_left" value="wheel_left_link" />
+        <param name="wheel_right" value="wheel_right_link" />
+    </node>
+
     <!-- Launch numsr_turtlebot node if robot==localhost -->
+    <node pkg="numsr_turtlebot" exec="numsr_turtlebot" if="$(eval '\'$(var robot)\' == \'localhost\'')"/>
     
     <!-- Launch rviz node if use_rviz==true -->
+
+    <!-- Publish a static TF between the odom and world frames-->
+    <node pkg="tf2_ros" exec="static_transform_publisher" args="0 0 0 0 0 0 1 /nusim/world /odom"/>
 
 </launch>

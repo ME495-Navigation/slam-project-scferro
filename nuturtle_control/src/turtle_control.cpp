@@ -35,7 +35,7 @@ public:
     // Parameters and default values
     declare_parameter("wheel_radius", -1.0);
     declare_parameter("track_width", -1.0);
-    declare_parameter("motor_cmd_max", 1.0);
+    declare_parameter("motor_cmd_max", 1);
     declare_parameter("motor_cmd_per_rad_sec", 1.0);
     declare_parameter("encoder_ticks_per_rad", 1.0);
     declare_parameter("collision_radius", 1.0);
@@ -49,7 +49,7 @@ public:
     collision_radius = get_parameter("collision_radius").as_double();
 
     // Check if parameters have been defined. if not, throw runtime error
-    if (wheel_radius == -1.0 || wheel_radius == -1.0) {
+    if (wheel_radius == -1.0 || track_width == -1.0) {
       throw std::runtime_error("Diff drive parameters not defined.");
     }
 
@@ -70,15 +70,15 @@ public:
     time_prev_sensor = ((double)(time_start.nanoseconds()) * 0.000000001);
 
     // Publishers
-    wheel_cmd_pub = create_publisher<nuturtlebot_msgs::msg::WheelCommands>("~/wheel_cmd", 10);
-    joint_states_pub = create_publisher<sensor_msgs::msg::JointState>("~/joint_states", 10);
+    wheel_cmd_pub = create_publisher<nuturtlebot_msgs::msg::WheelCommands>("wheel_cmd", 10);
+    joint_states_pub = create_publisher<sensor_msgs::msg::JointState>("joint_states", 10);
 
     // Subscribers
     cmd_vel_sub = create_subscription<geometry_msgs::msg::Twist>(
-      "~/cmd_vel",
+      "cmd_vel",
       10, std::bind(&Turtle_Control::cmd_vel_callback, this, std::placeholders::_1));
     sensor_data_sub = create_subscription<nuturtlebot_msgs::msg::SensorData>(
-      "~/sensor_data",
+      "sensor_data",
       10, std::bind(&Turtle_Control::sensor_data_callback, this, std::placeholders::_1));
 
     // Main timer

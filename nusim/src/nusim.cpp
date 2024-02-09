@@ -92,7 +92,7 @@ public:
 
     // Subscribers
     wheel_cmd_sub = create_subscription<nuturtlebot_msgs::msg::WheelCommands>(
-      "~/red/wheel_cmd",
+      "red/wheel_cmd",
       10, std::bind(&Nusim::wheel_cmd_callback, this, std::placeholders::_1));
 
     // Transform broadcaster

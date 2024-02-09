@@ -1,4 +1,4 @@
-nuturtle_description:
+/**:
   ros__parameters: 
     wheel_radius: 0.066
     track_width: 0.160

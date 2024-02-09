@@ -6,7 +6,7 @@
 <xacro:arg name="color" default="purple"/>
 
 <xacro:property name="yaml_file" value="$(find nuturtle_description)/config/diff_params.yaml" />
-<xacro:property name="config" value="${xacro.load_yaml(yaml_file)['nuturtle_description']['ros__parameters']}" />
+<xacro:property name="config" value="${xacro.load_yaml(yaml_file)['/**']['ros__parameters']}" />
 <xacro:property name="wheel_radius"  value="${config['wheel_radius']}" />
 <xacro:property name="track_width"  value="${config['track_width']}" />
 <xacro:property name="motor_cmd_max"  value="${config['motor_cmd_max']}" />

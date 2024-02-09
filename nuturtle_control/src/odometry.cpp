@@ -40,9 +40,9 @@ public:
     declare_parameter("wheel_right", "");
     declare_parameter("wheel_radius", -1.0);
     declare_parameter("track_width", -1.0);
-    declare_parameter("motor_cmd_max", 1.0);
+    declare_parameter("motor_cmd_max", 1);
     declare_parameter("motor_cmd_per_rad_sec", 1.0);
-    declare_parameter("encoder_ticks_per_rad", 1);
+    declare_parameter("encoder_ticks_per_rad", 1.0);
     declare_parameter("collision_radius", 1.0);
 
     // Define parameter variables
@@ -50,11 +50,11 @@ public:
     odom_id = get_parameter("odom_id").as_string();
     wheel_left = get_parameter("wheel_left").as_string();
     wheel_right = get_parameter("wheel_right").as_string();
-    wheel_radius = get_parameter("rate").as_double();
+    wheel_radius = get_parameter("wheel_radius").as_double();
     track_width = get_parameter("track_width").as_double();
     motor_cmd_max = get_parameter("motor_cmd_max").as_int();
     motor_cmd_per_rad_sec = get_parameter("motor_cmd_per_rad_sec").as_double();
-    encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_int();
+    encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_double();
     collision_radius = get_parameter("collision_radius").as_double();
 
     // Check if parameters have been defined. if not, throw runtime error
@@ -80,16 +80,16 @@ public:
     tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
     // Publishers
-    odom_pub = create_publisher<nav_msgs::msg::Odometry>("~/odom", 10);
+    odom_pub = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
 
     // Subscribers
     joint_state_sub = create_subscription<sensor_msgs::msg::JointState>(
-      "~/joint_states",
+      "joint_states",
       10, std::bind(&Odometry::joint_state_callback, this, std::placeholders::_1));
 
     // Services
     initial_pose_srv = create_service<nuturtle_control::srv::Pose>(
-      "~/initial_pose",
+      "initial_pose",
       std::bind(
         &Odometry::initial_pose_callback, this, std::placeholders::_1,
         std::placeholders::_2));
@@ -106,7 +106,7 @@ private:
   int rate;
   double wheel_radius;
   double track_width;
-  uint32_t motor_cmd_max;
+  int motor_cmd_max;
   double motor_cmd_per_rad_sec;
   int encoder_ticks_per_rad;
   double collision_radius;
