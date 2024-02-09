@@ -1,5 +1,5 @@
-/// \file turtle_control.cpp
-/// \brief Controls the turtlebot
+/// \file circle.cpp
+/// \brief Commands the turtlebot to drive in a circle
 ///
 /// PARAMETERS:
 /// PUBLISHES:
@@ -29,8 +29,8 @@ using namespace std::chrono_literals;
 class Turtle_Control : public rclcpp::Node
 {
 public:
-  Turtle_Control()
-  : Node("turtle_control"), timestep(0)
+  Circle()
+  : Node("circle"), timestep(0)
   {
     // Parameters and default values
     declare_parameter("wheel_radius", None);
@@ -220,7 +220,7 @@ private:
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<Turtle_Control>();
+  auto node = std::make_shared<Circle>();
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;

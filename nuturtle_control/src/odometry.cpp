@@ -1,5 +1,5 @@
-/// \file turtle_control.cpp
-/// \brief Simulates the turtlebot in the environment
+/// \file odometry.cpp
+/// \brief Tracks changes in the robot position based on wheel encoder data
 ///
 /// PARAMETERS:
 /// PUBLISHES:
@@ -206,7 +206,7 @@ private:
 int main(int argc, char ** argv)
 {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<Turtle_Control>();
+  auto node = std::make_shared<Odometry>();
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;
