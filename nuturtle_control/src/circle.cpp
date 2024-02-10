@@ -12,6 +12,9 @@
 ///     stop (std_srvs::srv::Empty): stops the robot
 ///     control (nuturtle_control::srv::Control): starts the robot with a specified angular speed and turning radius
 
+// Used ChatGPT for debugging
+// Refer to Citation [5] ChatGPT
+
 #include <chrono>
 #include <memory>
 #include <random>
@@ -35,8 +38,8 @@ public:
   : Node("circle")
   {
     // Parameters and default values
-    declare_parameter("angular_velocity", 1.0);
-    declare_parameter("radius", 1.0);
+    declare_parameter("angular_velocity", 4.0);
+    declare_parameter("radius", 0.333);
     declare_parameter("frequency", 100);
 
     // Define parameter variables

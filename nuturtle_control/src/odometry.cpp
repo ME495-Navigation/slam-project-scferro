@@ -6,7 +6,7 @@
 ///     odom_id (string): the name of the odometry frame
 ///     wheel_left (string): the name of the robot left wheel frame
 ///     wheel_right (string): the name of the robot right wheel frame
-///     wheel_radius (double): radius of the wheels (m)
+///     wheel_radius (double): diameter of the wheels (m)
 ///     track_width (double): track width of the wheels (m)
 ///     motor_cmd_max (int): max mcu command for the motor 
 ///     motor_cmd_per_rad_sec (double): the angular wheel speed per mcu (radians)
@@ -20,6 +20,9 @@
 ///     initial_pose (nuturtle_control::srv::Pose): resets the odometry to a specified initial state
 /// BROADCASTS:
 ///    odom_id -> body_id
+
+// Used ChatGPT for debugging
+// Refer to Citation [5] ChatGPT
 
 #include <chrono>
 #include <memory>
@@ -72,6 +75,7 @@ public:
     collision_radius = get_parameter("collision_radius").as_double();
 
     // Check if parameters have been defined. if not, throw runtime error
+    // Refer to Citation [2] ChatGPT
     if (wheel_radius == -1.0 || wheel_radius == -1.0) {
       throw std::runtime_error("Diff drive parameters not defined.");
     }
@@ -152,6 +156,7 @@ private:
     
     // Create odom message
     nav_msgs::msg::Odometry odom_msg;
+    // Refer to Citation [3] ChatGPT 
     odom_msg.header.stamp = get_clock()->now();
     odom_msg.header.frame_id = odom_id;
     odom_msg.child_frame_id = body_id;
@@ -177,6 +182,7 @@ private:
 
     // Publish transform from odom to base_link (same position)
     geometry_msgs::msg::TransformStamped tf;
+    // Refer to Citation [3] ChatGPT 
     tf.header.stamp = get_clock()->now();
     tf.header.frame_id = odom_id;
     tf.child_frame_id = body_id;

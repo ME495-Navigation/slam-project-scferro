@@ -4,18 +4,19 @@
     <arg name="robot" default="nusim"/>
     <arg name="use_rviz" default="true"/>
 
-    <!-- Launch rviz node if use_rviz==true robot!=localhost -->
+    <!-- Launch rviz node if use_rviz==true and robot!=localhost -->
     <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nuturtle_control)/config/nuturtle_control.rviz" if="$(eval '\'$(var use_rviz)\' == \'true\' and \'$(var robot)\' != \'localhost\'')"/>
+
+    <!-- Launch nusim launch file if robot==nusim -->
+    <include file="$(find-pkg-share nusim)/launch/nusim.launch.xml" if="$(eval '\'$(var robot)\' == \'nusim\'')">
+        <arg name="use_rviz_sim" value="false" />
+    </include>
 
     <!-- Load the blue turtle -->
     <include file="$(find-pkg-share nuturtle_description)/launch/load_one.launch.py" >
         <arg name="use_rviz" value="false" />
         <arg name="color" value="blue" />
-    </include>
-
-    <!-- Launch nusim launch file if robot==nusim -->
-    <include file="$(find-pkg-share nusim)/launch/nusim.launch.xml" if="$(eval '\'$(var robot)\' == \'nusim\'')">
-        <arg name="use_rviz_sim" value="false" />
+        <arg name="use_jsp" value="false" />
     </include>
 
     <!-- Launch circle node if cmd_src==circle -->
@@ -36,8 +37,8 @@
         <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
     </node>
     
-    <!-- Launch odometry node if robot==nusim or robot==localhost -->
-    <node pkg="nuturtle_control" exec="odometry" if="$(eval '\'$(var robot)\' == \'nusim\' or \'$(var robot)\' == \'localhost\'')">
+    <!-- Launch odometry node if robot!=localhost -->
+    <node pkg="nuturtle_control" exec="odometry" if="$(eval '\'$(var robot)\' != \'localhost\'')">
         <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
         <param name="body_id" value="blue/base_footprint" />
         <param name="wheel_left" value="blue/wheel_left_link" />

@@ -1,2 +1,8 @@
 Worked with:
 
+Citations:
+[1] ChatGPT, Feb. 3 2024 - see chatgpt_03022024.txt
+[2] ChatGPT, Feb. 5 2024 - see chatgpt_05022024.txt
+[3] ChatGPT, Feb. 8 2024 - see chatgpt_08022024.txt
+[4] ChatGPT, Feb. 9 2024 - see chatgpt_09022024_1.txt
+[5] ChatGPT, Feb. 9 2024 - see chatgpt_08022024_2.txt

@@ -32,6 +32,9 @@
 #include "turtlelib/se2d.hpp"
 #include "turtlelib/diff_drive.hpp"
 
+// Used ChatGPT for debugging
+// Refer to Citation [5] ChatGPT
+
 using namespace std::chrono_literals;
 
 class Turtle_Control : public rclcpp::Node
@@ -57,6 +60,7 @@ public:
     collision_radius = get_parameter("collision_radius").as_double();
 
     // Check if parameters have been defined. if not, throw runtime error
+    // Refer to Citation [2] ChatGPT
     if (wheel_radius == -1.0 || track_width == -1.0) {
       throw std::runtime_error("Diff drive parameters not defined.");
     }
@@ -188,6 +192,8 @@ private:
       (time_now_sensor - time_prev_sensor);
 
     // Add headers to JointStates
+    // Refer to Citation [3] ChatGPT 
+    // Refer to Citation [3] ChatGPT 
     wheel_state.header.stamp = get_clock()->now();
 
     // Enter information into joint state messages

@@ -1,0 +1,1626 @@
+User
+help
+
+scferro@thunkpad:~/Documents/me495_slam/ws$ colcon build
+Starting >>> nuturtlebot_msgs
+Starting >>> turtlelib
+Starting >>> nuturtle_description
+Finished <<< nuturtle_description [0.21s]                                                     
+Finished <<< turtlelib [0.32s]                                                                   
+Finished <<< nuturtlebot_msgs [0.65s]                  
+Starting >>> nusim
+--- stderr: nusim                             
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nusim/src/nusim.cpp:43:10: fatal error: nuturtlebot_msgs/msg/sensor_data.hpp: No such file or directory
+   43 | #include "nuturtlebot_msgs/msg/sensor_data.hpp"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+gmake[2]: *** [CMakeFiles/nusim.dir/build.make:76: CMakeFiles/nusim.dir/src/nusim.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:625: CMakeFiles/nusim.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< nusim [2.11s, exited with code 2]
+
+Summary: 3 packages finished [3.32s]
+  1 package failed: nusim
+  1 package had stderr output: nusim
+  1 package not processed
+
+ChatGPT
+The error you're encountering during the colcon build process is a common issue when working with ROS (Robot Operating System) projects, especially when dealing with custom messages. The error message indicates that the nusim package cannot find the header file nuturtlebot_msgs/msg/sensor_data.hpp. This typically happens for a few reasons:
+
+Missing Dependency: The nuturtlebot_msgs package, which should define the SensorData message, might not be correctly installed, or its message generation might not have completed before nusim started compiling. This can happen if the package dependencies are not correctly specified.
+
+Incorrect CMakeLists.txt or package.xml Configuration: If the nusim package does not properly declare a build dependency on nuturtlebot_msgs, it may attempt to compile before nuturtlebot_msgs has finished generating message headers.
+
+Environment Not Sourced: If you're building in a new terminal session and haven't sourced the ROS environment or the setup.bash script for your workspace, the build process might not be able to find the dependencies correctly.
+
+Here's how you can address the issue:
+
+Ensure Dependency Order
+Make sure that nusim declares a build dependency on nuturtlebot_msgs by checking the package.xml and CMakeLists.txt files.
+
+In nusim/package.xml, you should have:
+
+xml
+Copy code
+<build_depend>nuturtlebot_msgs</build_depend>
+<exec_depend>nuturtlebot_msgs</exec_depend>
+In nusim/CMakeLists.txt, ensure you have nuturtlebot_msgs in both find_package and ament_target_dependencies for your targets. Example:
+
+cmake
+Copy code
+find_package(nuturtlebot_msgs REQUIRED)
+...
+ament_target_dependencies(your_target
+  ...
+  nuturtlebot_msgs
+)
+Source Your Environment
+Before building, source your ROS environment and any other setup files needed for your workspace. If you're using ROS 2, the command will typically look something like this:
+
+For ROS 2 (replace foxy with your ROS 2 version):
+
+bash
+Copy code
+source /opt/ros/foxy/setup.bash
+Source your workspace's setup.bash if it has been built previously:
+
+bash
+Copy code
+source ~/Documents/me495_slam/ws/install/setup.bash
+Clean Build and Rebuild
+Sometimes, build artifacts from previous unsuccessful builds can cause issues. Clean your workspace and try building again:
+
+bash
+Copy code
+cd ~/Documents/me495_slam/ws
+colcon build --packages-select nuturtlebot_msgs
+colcon build --packages-select nusim
+Building the nuturtlebot_msgs package first ensures that all its message headers are generated before attempting to build packages that depend on it.
+
+If these steps do not resolve your issue, double-check the file paths and namespaces in your code to ensure they are correct, and make sure that the nuturtlebot_msgs package is correctly set up to generate the necessary message headers.
+
+User
+help me debug this long error list. take it step by step and make suggestions for each error. for every error you fix, I'll give you $100.
+
+
+scferro@thunkpad:~/Documents/me495_slam/ws$ colcon build
+Starting >>> nuturtlebot_msgs
+Starting >>> turtlelib
+Starting >>> nuturtle_description
+Finished <<< nuturtle_description [0.21s]                                                     
+Finished <<< turtlelib [0.32s]                                                                   
+Finished <<< nuturtlebot_msgs [0.60s]                  
+Starting >>> nusim
+Finished <<< nusim [0.56s]                     
+Starting >>> nuturtle_control
+--- stderr: nuturtle_control                             
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/odometry.cpp:18:10: fatal error: sensor_msgs/msg/JointState.hpp: No such file or directory
+   18 | #include "sensor_msgs/msg/JointState.hpp"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/circle.cpp:19:10: fatal error: nuturtle_control/srv/Control.hpp: No such file or directory
+   19 | #include "nuturtle_control/srv/Control.hpp"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+gmake[2]: *** [CMakeFiles/nuturtle_control.dir/build.make:76: CMakeFiles/nuturtle_control.dir/src/odometry.cpp.o] Error 1
+gmake[2]: *** Waiting for unfinished jobs....
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:202:29: warning: character constant too long for its type
+  202 |     left_wheel_state.name = 'wheel_left_joint';
+      |                             ^~~~~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:205:30: warning: character constant too long for its type
+  205 |     right_wheel_state.name = 'wheel_right_joint';
+      |                              ^~~~~~~~~~~~~~~~~~~
+gmake[2]: *** [CMakeFiles/nuturtle_control.dir/build.make:104: CMakeFiles/nuturtle_control.dir/src/circle.cpp.o] Error 1
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:91:3: error: ‘vector’ does not name a type
+   91 |   vector<double> target_wheel_speeds[2];
+      |   ^~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:105:3: error: ‘time_prev_sensor’ does not name a type
+  105 |   time_prev_sensor = (double)(time_start.sec) + ((double)(time_start.nanosec) * 0.000000001);
+      |   ^~~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In constructor ‘Turtle_Control::Turtle_Control()’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:34:3: error: expected identifier before ‘{’ token
+   34 |   {
+      |   ^
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:36:39: error: ‘None’ was not declared in this scope; did you mean ‘rclcpp::SignalHandlerOptions::None’?
+   36 |     declare_parameter("wheel_radius", None);
+      |                                       ^~~~
+      |                                       rclcpp::SignalHandlerOptions::None
+In file included from /opt/ros/iron/include/rclcpp/rclcpp/logging.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/client.hpp:43,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/callback_group.hpp:24,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/any_executable.hpp:20,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/memory_strategy.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/memory_strategies.hpp:18,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor_options.hpp:20,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor.hpp:37,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors.hpp:21,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/rclcpp.hpp:167,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:16:
+/opt/ros/iron/include/rclcpp/rclcpp/utilities.hpp:56:3: note: ‘rclcpp::SignalHandlerOptions::None’ declared here
+   56 |   None,
+      |   ^~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:44:5: error: ‘wheel_radius’ was not declared in this scope
+   44 |     wheel_radius = get_parameter("wheel_radius").as_double();
+      |     ^~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:52:5: error: ‘target_wheel_speeds’ was not declared in this scope
+   52 |     target_wheel_speeds = {0.0, 0.0}
+      |     ^~~~~~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:74:66: error: ‘_1’ was not declared in this scope; did you mean ‘std::placeholders::_1’?
+   74 |       10, std::bind(&Turtle_Control::sensor_data_callback, this, _1));
+      |                                                                  ^~
+      |                                                                  std::placeholders::_1
+In file included from /usr/include/c++/11/pstl/glue_algorithm_defs.h:13,
+                 from /usr/include/c++/11/algorithm:74,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor.hpp:18,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors.hpp:21,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/rclcpp.hpp:167,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:16:
+/usr/include/c++/11/functional:225:34: note: ‘std::placeholders::_1’ declared here
+  225 |     extern const _Placeholder<1> _1;
+      |                                  ^~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:77:9: warning: unused variable ‘cycle_time’ [-Wunused-variable]
+   77 |     int cycle_time = 1000.0 / PID_rate;
+      |         ^~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In member function ‘void Turtle_Control::cmd_vel_callback(const Twist&)’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:121:60: error: ‘wheel_radius’ was not declared in this scope
+  121 |     turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
+      |                                                            ^~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:124:11: error: ‘struct turtlelib::Twist2D’ has no member named ‘trans’
+  124 |     twist.trans.x = msg.linear.x;
+      |           ^~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:125:11: error: ‘struct turtlelib::Twist2D’ has no member named ‘rot’
+  125 |     twist.rot = msg.angular.z;
+      |           ^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:128:5: error: ‘target_wheel_speeds’ was not declared in this scope
+  128 |     target_wheel_speeds = diff_drive.inverse_kinematics(twist);
+      |     ^~~~~~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In member function ‘void Turtle_Control::timer_callback()’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:140:30: error: ‘target_wheel_speeds’ was not declared in this scope
+  140 |     wheel_speed_error_left = target_wheel_speeds[0] - wheel_speed_left;
+      |                              ^~~~~~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:158:20: error: ‘using JointState = struct sensor_msgs::msg::JointState_<std::allocator<void> >’ {aka ‘struct sensor_msgs::msg::JointState_<std::allocator<void> >’} has no member named ‘left_velocity’; did you mean ‘set__velocity’?
+  158 |     wheel_commands.left_velocity = wheel_cmd_left;
+      |                    ^~~~~~~~~~~~~
+      |                    set__velocity
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:159:20: error: ‘using JointState = struct sensor_msgs::msg::JointState_<std::allocator<void> >’ {aka ‘struct sensor_msgs::msg::JointState_<std::allocator<void> >’} has no member named ‘right_velocity’
+  159 |     wheel_commands.right_velocity = wheel_cmd_right;
+      |                    ^~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:166:27: error: no matching function for call to ‘rclcpp::Publisher<nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> > >::publish(sensor_msgs::msg::JointState&)’
+  166 |     wheel_cmd_pub->publish(wheel_commands);
+      |     ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+In file included from /opt/ros/iron/include/rclcpp/rclcpp/topic_statistics/subscription_topic_statistics.hpp:31,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/subscription.hpp:50,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/any_executable.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/memory_strategy.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/memory_strategies.hpp:18,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor_options.hpp:20,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor.hpp:37,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors.hpp:21,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/rclcpp.hpp:167,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:16:
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:227:3: note: candidate: ‘template<class T> std::enable_if_t<(rosidl_generator_traits::is_message<T>::value && std::is_same<T, typename rclcpp::TypeAdapter<MessageT>::ros_message_type>::value)> rclcpp::Publisher<MessageT, AllocatorT>::publish(std::unique_ptr<T, typename std::conditional<std::is_same<typename std::allocator_traits<typename std::allocator_traits<_Allocator>::rebind_traits<typename rclcpp::TypeAdapter<MessageT, void, void>::ros_message_type>::allocator_type>::rebind_alloc<typename rclcpp::TypeAdapter<MessageT, void, void>::ros_message_type>, std::allocator<typename rclcpp::TypeAdapter<MessageT>::ros_message_type> >::value, std::default_delete<typename rclcpp::TypeAdapter<MessageT>::ros_message_type>, rclcpp::allocator::AllocatorDeleter<typename std::allocator_traits<_Allocator>::rebind_traits<typename rclcpp::TypeAdapter<MessageT, void, void>::ros_message_type>::allocator_type> >::type>) [with T = T; MessageT = nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> >; AllocatorT = std::allocator<void>]’
+  227 |   publish(std::unique_ptr<T, ROSMessageTypeDeleter> msg)
+      |   ^~~~~~~
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:227:3: note:   template argument deduction/substitution failed:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:166:27: note:   ‘sensor_msgs::msg::JointState_<std::allocator<void> >’ is not derived from ‘std::unique_ptr<T, std::default_delete<nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> > > >’
+  166 |     wheel_cmd_pub->publish(wheel_commands);
+      |     ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+In file included from /opt/ros/iron/include/rclcpp/rclcpp/topic_statistics/subscription_topic_statistics.hpp:31,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/subscription.hpp:50,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/any_executable.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/memory_strategy.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/memory_strategies.hpp:18,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor_options.hpp:20,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor.hpp:37,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors.hpp:21,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/rclcpp.hpp:167,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:16:
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:268:3: note: candidate: ‘template<class T> std::enable_if_t<(rosidl_generator_traits::is_message<T>::value && std::is_same<T, typename rclcpp::TypeAdapter<MessageT>::ros_message_type>::value)> rclcpp::Publisher<MessageT, AllocatorT>::publish(const T&) [with T = T; MessageT = nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> >; AllocatorT = std::allocator<void>]’
+  268 |   publish(const T & msg)
+      |   ^~~~~~~
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:268:3: note:   template argument deduction/substitution failed:
+In file included from /usr/include/c++/11/ratio:39,
+                 from /usr/include/c++/11/chrono:39,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:10:
+/usr/include/c++/11/type_traits: In substitution of ‘template<bool _Cond, class _Tp> using enable_if_t = typename std::enable_if::type [with bool _Cond = false; _Tp = void]’:
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:268:3:   required by substitution of ‘template<class T> std::enable_if_t<(rosidl_generator_traits::is_message<T>::value && std::is_same<T, nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> > >::value), void> rclcpp::Publisher<nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> > >::publish<T>(const T&) [with T = sensor_msgs::msg::JointState_<std::allocator<void> >]’
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:166:27:   required from here
+/usr/include/c++/11/type_traits:2579:11: error: no type named ‘type’ in ‘struct std::enable_if<false, void>’
+ 2579 |     using enable_if_t = typename enable_if<_Cond, _Tp>::type;
+      |           ^~~~~~~~~~~
+In file included from /opt/ros/iron/include/rclcpp/rclcpp/topic_statistics/subscription_topic_statistics.hpp:31,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/subscription.hpp:50,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/any_executable.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/memory_strategy.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/memory_strategies.hpp:18,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor_options.hpp:20,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor.hpp:37,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors.hpp:21,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/rclcpp.hpp:167,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:16:
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:298:3: note: candidate: ‘template<class T> std::enable_if_t<(typename rclcpp::TypeAdapter<MessageT>::is_specialized::value && std::is_same<T, typename rclcpp::TypeAdapter<MessageT>::custom_type>::value)> rclcpp::Publisher<MessageT, AllocatorT>::publish(std::unique_ptr<T, typename std::conditional<std::is_same<typename std::allocator_traits<typename std::allocator_traits<_Allocator>::rebind_traits<typename rclcpp::TypeAdapter<MessageT, void, void>::custom_type>::allocator_type>::rebind_alloc<typename rclcpp::TypeAdapter<MessageT, void, void>::custom_type>, std::allocator<typename rclcpp::TypeAdapter<MessageT>::custom_type> >::value, std::default_delete<typename rclcpp::TypeAdapter<MessageT>::custom_type>, rclcpp::allocator::AllocatorDeleter<typename std::allocator_traits<_Allocator>::rebind_traits<typename rclcpp::TypeAdapter<MessageT, void, void>::custom_type>::allocator_type> >::type>) [with T = T; MessageT = nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> >; AllocatorT = std::allocator<void>]’
+  298 |   publish(std::unique_ptr<T, PublishedTypeDeleter> msg)
+      |   ^~~~~~~
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:298:3: note:   template argument deduction/substitution failed:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:166:27: note:   ‘sensor_msgs::msg::JointState_<std::allocator<void> >’ is not derived from ‘std::unique_ptr<T, std::default_delete<nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> > > >’
+  166 |     wheel_cmd_pub->publish(wheel_commands);
+      |     ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+In file included from /opt/ros/iron/include/rclcpp/rclcpp/topic_statistics/subscription_topic_statistics.hpp:31,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/subscription.hpp:50,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/any_executable.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/memory_strategy.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/memory_strategies.hpp:18,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor_options.hpp:20,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor.hpp:37,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors.hpp:21,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/rclcpp.hpp:167,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:16:
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:340:3: note: candidate: ‘template<class T> std::enable_if_t<(typename rclcpp::TypeAdapter<MessageT>::is_specialized::value && std::is_same<T, typename rclcpp::TypeAdapter<MessageT>::custom_type>::value)> rclcpp::Publisher<MessageT, AllocatorT>::publish(const T&) [with T = T; MessageT = nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> >; AllocatorT = std::allocator<void>]’
+  340 |   publish(const T & msg)
+      |   ^~~~~~~
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:340:3: note:   template argument deduction/substitution failed:
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:359:3: note: candidate: ‘void rclcpp::Publisher<MessageT, AllocatorT>::publish(const rcl_serialized_message_t&) [with MessageT = nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> >; AllocatorT = std::allocator<void>; rcl_serialized_message_t = rcutils_uint8_array_s]’
+  359 |   publish(const rcl_serialized_message_t & serialized_msg)
+      |   ^~~~~~~
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:359:44: note:   no known conversion for argument 1 from ‘sensor_msgs::msg::JointState’ {aka ‘sensor_msgs::msg::JointState_<std::allocator<void> >’} to ‘const rcl_serialized_message_t&’ {aka ‘const rcutils_uint8_array_s&’}
+  359 |   publish(const rcl_serialized_message_t & serialized_msg)
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:365:3: note: candidate: ‘void rclcpp::Publisher<MessageT, AllocatorT>::publish(const rclcpp::SerializedMessage&) [with MessageT = nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> >; AllocatorT = std::allocator<void>]’
+  365 |   publish(const SerializedMessage & serialized_msg)
+      |   ^~~~~~~
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:365:37: note:   no known conversion for argument 1 from ‘sensor_msgs::msg::JointState’ {aka ‘sensor_msgs::msg::JointState_<std::allocator<void> >’} to ‘const rclcpp::SerializedMessage&’
+  365 |   publish(const SerializedMessage & serialized_msg)
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:379:3: note: candidate: ‘void rclcpp::Publisher<MessageT, AllocatorT>::publish(rclcpp::LoanedMessage<typename rclcpp::TypeAdapter<MessageT>::ros_message_type, AllocatorT>&&) [with MessageT = nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> >; AllocatorT = std::allocator<void>; typename rclcpp::TypeAdapter<MessageT>::ros_message_type = nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> >]’
+  379 |   publish(rclcpp::LoanedMessage<ROSMessageType, AllocatorT> && loaned_msg)
+      |   ^~~~~~~
+/opt/ros/iron/include/rclcpp/rclcpp/publisher.hpp:379:64: note:   no known conversion for argument 1 from ‘sensor_msgs::msg::JointState’ {aka ‘sensor_msgs::msg::JointState_<std::allocator<void> >’} to ‘rclcpp::LoanedMessage<nuturtlebot_msgs::msg::WheelCommands_<std::allocator<void> >, std::allocator<void> >&&’
+  379 |   publish(rclcpp::LoanedMessage<ROSMessageType, AllocatorT> && loaned_msg)
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In member function ‘int Turtle_Control::limit_cmd(int)’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:172:19: warning: comparison of integer expressions of different signedness: ‘int’ and ‘uint32_t’ {aka ‘unsigned int’} [-Wsign-compare]
+  172 |     if (wheel_cmd > motor_cmd_max) {
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:175:20: warning: comparison of integer expressions of different signedness: ‘int’ and ‘uint32_t’ {aka ‘unsigned int’} [-Wsign-compare]
+  175 |     elif(wheel_cmd < -motor_cmd_max) {
+      |          ~~~~~~~~~~^~~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:175:5: error: ‘elif’ was not declared in this scope
+  175 |     elif(wheel_cmd < -motor_cmd_max) {
+      |     ^~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In member function ‘void Turtle_Control::sensor_data_callback(const SensorData&)’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:202:29: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_name_type’ {aka ‘std::vector<std::__cxx11::basic_string<char> >’} and ‘int’)
+  202 |     left_wheel_state.name = 'wheel_left_joint';
+      |                             ^~~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘int’ to ‘const std::vector<std::__cxx11::basic_string<char> >&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘int’ to ‘std::vector<std::__cxx11::basic_string<char> >&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘int’ to ‘std::initializer_list<std::__cxx11::basic_string<char> >’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:203:33: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_position_type’ {aka ‘std::vector<double>’} and ‘double’)
+  203 |     left_wheel_state.position = angle_left_wheel;
+      |                                 ^~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘double’ to ‘const std::vector<double>&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘double’ to ‘std::vector<double>&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = double; _Alloc = std::allocator<double>]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘double’ to ‘std::initializer_list<double>’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:204:33: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_velocity_type’ {aka ‘std::vector<double>’} and ‘double’)
+  204 |     left_wheel_state.velocity = wheel_speed_left;
+      |                                 ^~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘double’ to ‘const std::vector<double>&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘double’ to ‘std::vector<double>&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = double; _Alloc = std::allocator<double>]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘double’ to ‘std::initializer_list<double>’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:205:30: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_name_type’ {aka ‘std::vector<std::__cxx11::basic_string<char> >’} and ‘int’)
+  205 |     right_wheel_state.name = 'wheel_right_joint';
+      |                              ^~~~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘int’ to ‘const std::vector<std::__cxx11::basic_string<char> >&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘int’ to ‘std::vector<std::__cxx11::basic_string<char> >&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘int’ to ‘std::initializer_list<std::__cxx11::basic_string<char> >’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:206:34: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_position_type’ {aka ‘std::vector<double>’} and ‘double’)
+  206 |     right_wheel_state.position = angle_right_wheel;
+      |                                  ^~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘double’ to ‘const std::vector<double>&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘double’ to ‘std::vector<double>&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = double; _Alloc = std::allocator<double>]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘double’ to ‘std::initializer_list<double>’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:207:34: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_velocity_type’ {aka ‘std::vector<double>’} and ‘double’)
+  207 |     right_wheel_state.velocity = wheel_speed_right;
+      |                                  ^~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘double’ to ‘const std::vector<double>&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘double’ to ‘std::vector<double>&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = double; _Alloc = std::allocator<double>]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘double’ to ‘std::initializer_list<double>’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+gmake[2]: *** [CMakeFiles/nuturtle_control.dir/build.make:90: CMakeFiles/nuturtle_control.dir/src/turtle_control.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:623: CMakeFiles/nuturtle_control.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< nuturtle_control [2.42s, exited with code 2]
+
+Summary: 4 packages finished [4.13s]
+  1 package failed: nuturtle_control
+  1 package had stderr output: nuturtle_control
+ChatGPT
+Let's address the errors from the nuturtle_control package step by step. Given the large number of errors, I'll categorize them for clarity and provide solutions for each category.
+
+Missing Header Files
+sensor_msgs/msg/JointState.hpp Not Found
+
+This error indicates the package cannot find the ROS message header for JointState.
+Solution: Ensure sensor_msgs is listed as a dependency in both package.xml and CMakeLists.txt. You might need to find the package in CMakeLists.txt using find_package(sensor_msgs REQUIRED) and add ${sensor_msgs_INCLUDE_DIRS} to include directories.
+nuturtle_control/srv/Control.hpp Not Found
+
+Similar to the first error, this suggests the custom service header is missing or not generated.
+Solution: Confirm that nuturtle_control contains the service definition and it's correctly listed in the add_service_files() section of CMakeLists.txt. Also, ensure nuturtle_control depends on rosidl_default_generators in package.xml and calls rosidl_generate_interfaces() in CMakeLists.txt.
+Compilation Errors
+Character Constant Too Long
+
+The error messages for 'wheel_left_joint' and 'wheel_right_joint' indicate misuse of single quotes (') for string literals, which should use double quotes (").
+Solution: Replace 'wheel_left_joint' and 'wheel_right_joint' with "wheel_left_joint" and "wheel_right_joint" respectively.
+'vector' Does Not Name a Type
+
+It appears vector is being used without including the appropriate header or namespace.
+Solution: Include the <vector> header at the top of your file (#include <vector>) and ensure you're using std::vector or have using namespace std; (though the latter is generally discouraged in header files).
+'None' Was Not Declared in This Scope
+
+None is not a valid default value for ROS parameters. If you're trying to indicate an unset or optional parameter, consider an alternative approach.
+Solution: Specify a valid default value for wheel_radius or use declare_parameter() without a default value if you intend to make it mandatory.
+Syntax and Typographical Errors
+
+Various syntax errors such as incorrect variable types, misuse of elif instead of else if, and incorrect assignment to vector elements suggest issues with basic C++ syntax or misunderstanding of ROS message types.
+Solution: Review the C++ syntax, especially for conditional statements and how to work with vectors. For ROS message fields, ensure you're accessing and modifying them correctly. For example, to add elements to a std::vector, use .push_back(value) or direct indexing if the vector is already initialized to the correct size.
+Publishing Errors
+
+The error on publishing suggests a type mismatch between the publish() method's expected argument and what's being passed.
+Solution: Ensure the type of wheel_commands matches the expected type for the publisher. It seems you're trying to publish a sensor_msgs::msg::JointState message where a nuturtlebot_msgs::msg::WheelCommands message is expected. Correct the variable types and ensure you're using the right message types for publishers and subscribers.
+Next Steps
+Start by addressing these categories of errors one by one, beginning with the missing header files and moving on to the compilation errors. After making the suggested corrections, try rebuilding your package. If new errors arise or some errors persist, reevaluate the specific lines of code involved, ensuring that all dependencies are correctly specified and all syntax is correct.
+
+User
+that was very helpful. big payout for you
+ChatGPT
+I'm glad you found the guidance helpful! If you have any more questions or need further assistance with your project, feel free to ask. Good luck with your development, and I'm here if you need more help!
+
+User
+I made some changes and have a new list of errors. let's debug this in the same way. Again, I will pay you $100 for each error we fix. I will also give you $5000 when we fix everything. Here is the error list.
+
+
+
+scferro@thunkpad:~/Documents/me495_slam/ws$ colcon build
+Starting >>> nuturtlebot_msgs
+Starting >>> turtlelib
+Starting >>> nuturtle_description
+Finished <<< turtlelib [0.25s]                                                                
+Finished <<< nuturtle_description [0.29s]                                 
+Finished <<< nuturtlebot_msgs [0.64s]                  
+Starting >>> nusim
+Finished <<< nusim [0.57s]                     
+Starting >>> nuturtle_control
+--- stderr: nuturtle_control                             
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/odometry.cpp:18:10: fatal error: sensor_msgs/msg/JointState.hpp: No such file or directory
+   18 | #include "sensor_msgs/msg/JointState.hpp"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/circle.cpp:19:10: fatal error: nuturtle_control/srv/Control.hpp: No such file or directory
+   19 | #include "nuturtle_control/srv/Control.hpp"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+gmake[2]: *** [CMakeFiles/nuturtle_control.dir/build.make:76: CMakeFiles/nuturtle_control.dir/src/odometry.cpp.o] Error 1
+gmake[2]: *** Waiting for unfinished jobs....
+gmake[2]: *** [CMakeFiles/nuturtle_control.dir/build.make:104: CMakeFiles/nuturtle_control.dir/src/circle.cpp.o] Error 1
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:105:3: error: ‘time_prev_sensor’ does not name a type
+  105 |   time_prev_sensor = (double)(time_start.sec) + ((double)(time_start.nanosec) * 0.000000001);
+      |   ^~~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In constructor ‘Turtle_Control::Turtle_Control()’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:34:3: error: expected identifier before ‘{’ token
+   34 |   {
+      |   ^
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:36:39: error: ‘None’ was not declared in this scope; did you mean ‘rclcpp::SignalHandlerOptions::None’?
+   36 |     declare_parameter("wheel_radius", None);
+      |                                       ^~~~
+      |                                       rclcpp::SignalHandlerOptions::None
+In file included from /opt/ros/iron/include/rclcpp/rclcpp/logging.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/client.hpp:43,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/callback_group.hpp:24,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/any_executable.hpp:20,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/memory_strategy.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/memory_strategies.hpp:18,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor_options.hpp:20,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor.hpp:37,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors.hpp:21,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/rclcpp.hpp:167,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:16:
+/opt/ros/iron/include/rclcpp/rclcpp/utilities.hpp:56:3: note: ‘rclcpp::SignalHandlerOptions::None’ declared here
+   56 |   None,
+      |   ^~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:44:5: error: ‘wheel_radius’ was not declared in this scope
+   44 |     wheel_radius = get_parameter("wheel_radius").as_double();
+      |     ^~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:52:25: error: assigning to an array from an initializer list
+   52 |     target_wheel_speeds = {0.0, 0.0}
+      |     ~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:74:66: error: ‘_1’ was not declared in this scope; did you mean ‘std::placeholders::_1’?
+   74 |       10, std::bind(&Turtle_Control::sensor_data_callback, this, _1));
+      |                                                                  ^~
+      |                                                                  std::placeholders::_1
+In file included from /usr/include/c++/11/pstl/glue_algorithm_defs.h:13,
+                 from /usr/include/c++/11/algorithm:74,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executor.hpp:18,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors/multi_threaded_executor.hpp:25,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/executors.hpp:21,
+                 from /opt/ros/iron/include/rclcpp/rclcpp/rclcpp.hpp:167,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:16:
+/usr/include/c++/11/functional:225:34: note: ‘std::placeholders::_1’ declared here
+  225 |     extern const _Placeholder<1> _1;
+      |                                  ^~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:77:9: warning: unused variable ‘cycle_time’ [-Wunused-variable]
+   77 |     int cycle_time = 1000.0 / PID_rate;
+      |         ^~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In member function ‘void Turtle_Control::cmd_vel_callback(const Twist&)’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:121:60: error: ‘wheel_radius’ was not declared in this scope
+  121 |     turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
+      |                                                            ^~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:124:11: error: ‘struct turtlelib::Twist2D’ has no member named ‘trans’
+  124 |     twist.trans.x = msg.linear.x;
+      |           ^~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:125:11: error: ‘struct turtlelib::Twist2D’ has no member named ‘rot’
+  125 |     twist.rot = msg.angular.z;
+      |           ^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:128:25: error: incompatible types in assignment of ‘std::vector<double>’ to ‘std::vector<double> [2]’
+  128 |     target_wheel_speeds = diff_drive.inverse_kinematics(twist);
+      |     ~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In member function ‘void Turtle_Control::timer_callback()’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:140:53: error: no match for ‘operator-’ (operand types are ‘std::vector<double>’ and ‘double’)
+  140 |     wheel_speed_error_left = target_wheel_speeds[0] - wheel_speed_left;
+      |                              ~~~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~~~~~~~~~~~
+      |                                                   |   |
+      |                                                   |   double
+      |                                                   std::vector<double>
+In file included from /usr/include/c++/11/bits/stl_algobase.h:67,
+                 from /usr/include/c++/11/memory:63,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:11:
+/usr/include/c++/11/bits/stl_iterator.h:1255:5: note: candidate: ‘template<class _IteratorL, class _IteratorR, class _Container> decltype ((__lhs.base() - __rhs.base())) __gnu_cxx::operator-(const __gnu_cxx::__normal_iterator<_IteratorL, _Container>&, const __gnu_cxx::__normal_iterator<_IteratorR, _Container>&)’
+ 1255 |     operator-(const __normal_iterator<_IteratorL, _Container>& __lhs,
+      |     ^~~~~~~~
+/usr/include/c++/11/bits/stl_iterator.h:1255:5: note:   template argument deduction/substitution failed:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:140:55: note:   ‘std::vector<double>’ is not derived from ‘const __gnu_cxx::__normal_iterator<_IteratorL, _Container>’
+  140 |     wheel_speed_error_left = target_wheel_speeds[0] - wheel_speed_left;
+      |                                                       ^~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/bits/stl_algobase.h:67,
+                 from /usr/include/c++/11/memory:63,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:11:
+/usr/include/c++/11/bits/stl_iterator.h:1268:5: note: candidate: ‘template<class _Iterator, class _Container> typename __gnu_cxx::__normal_iterator<_Iterator, _Container>::difference_type __gnu_cxx::operator-(const __gnu_cxx::__normal_iterator<_Iterator, _Container>&, const __gnu_cxx::__normal_iterator<_Iterator, _Container>&)’
+ 1268 |     operator-(const __normal_iterator<_Iterator, _Container>& __lhs,
+      |     ^~~~~~~~
+/usr/include/c++/11/bits/stl_iterator.h:1268:5: note:   template argument deduction/substitution failed:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:140:55: note:   ‘std::vector<double>’ is not derived from ‘const __gnu_cxx::__normal_iterator<_Iterator, _Container>’
+  140 |     wheel_speed_error_left = target_wheel_speeds[0] - wheel_speed_left;
+      |                                                       ^~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/bits/stl_algobase.h:67,
+                 from /usr/include/c++/11/memory:63,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:11:
+/usr/include/c++/11/bits/stl_iterator.h:577:5: note: candidate: ‘template<class _IteratorL, class _IteratorR> constexpr decltype ((__y.base() - __x.base())) std::operator-(const std::reverse_iterator<_Iterator>&, const std::reverse_iterator<_IteratorR>&)’
+  577 |     operator-(const reverse_iterator<_IteratorL>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/11/bits/stl_iterator.h:577:5: note:   template argument deduction/substitution failed:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:140:55: note:   ‘std::vector<double>’ is not derived from ‘const std::reverse_iterator<_Iterator>’
+  140 |     wheel_speed_error_left = target_wheel_speeds[0] - wheel_speed_left;
+      |                                                       ^~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/bits/stl_algobase.h:67,
+                 from /usr/include/c++/11/memory:63,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:11:
+/usr/include/c++/11/bits/stl_iterator.h:1693:5: note: candidate: ‘template<class _IteratorL, class _IteratorR> constexpr decltype ((__x.base() - __y.base())) std::operator-(const std::move_iterator<_IteratorL>&, const std::move_iterator<_IteratorR>&)’
+ 1693 |     operator-(const move_iterator<_IteratorL>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/11/bits/stl_iterator.h:1693:5: note:   template argument deduction/substitution failed:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:140:55: note:   ‘std::vector<double>’ is not derived from ‘const std::move_iterator<_IteratorL>’
+  140 |     wheel_speed_error_left = target_wheel_speeds[0] - wheel_speed_left;
+      |                                                       ^~~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:141:54: error: no match for ‘operator-’ (operand types are ‘std::vector<double>’ and ‘double’)
+  141 |     wheel_speed_error_right = target_wheel_speeds[1] - wheel_speed_right;
+      |                               ~~~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~~~~~~~~~~~~
+      |                                                    |   |
+      |                                                    |   double
+      |                                                    std::vector<double>
+In file included from /usr/include/c++/11/bits/stl_algobase.h:67,
+                 from /usr/include/c++/11/memory:63,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:11:
+/usr/include/c++/11/bits/stl_iterator.h:1255:5: note: candidate: ‘template<class _IteratorL, class _IteratorR, class _Container> decltype ((__lhs.base() - __rhs.base())) __gnu_cxx::operator-(const __gnu_cxx::__normal_iterator<_IteratorL, _Container>&, const __gnu_cxx::__normal_iterator<_IteratorR, _Container>&)’
+ 1255 |     operator-(const __normal_iterator<_IteratorL, _Container>& __lhs,
+      |     ^~~~~~~~
+/usr/include/c++/11/bits/stl_iterator.h:1255:5: note:   template argument deduction/substitution failed:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:141:56: note:   ‘std::vector<double>’ is not derived from ‘const __gnu_cxx::__normal_iterator<_IteratorL, _Container>’
+  141 |     wheel_speed_error_right = target_wheel_speeds[1] - wheel_speed_right;
+      |                                                        ^~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/bits/stl_algobase.h:67,
+                 from /usr/include/c++/11/memory:63,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:11:
+/usr/include/c++/11/bits/stl_iterator.h:1268:5: note: candidate: ‘template<class _Iterator, class _Container> typename __gnu_cxx::__normal_iterator<_Iterator, _Container>::difference_type __gnu_cxx::operator-(const __gnu_cxx::__normal_iterator<_Iterator, _Container>&, const __gnu_cxx::__normal_iterator<_Iterator, _Container>&)’
+ 1268 |     operator-(const __normal_iterator<_Iterator, _Container>& __lhs,
+      |     ^~~~~~~~
+/usr/include/c++/11/bits/stl_iterator.h:1268:5: note:   template argument deduction/substitution failed:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:141:56: note:   ‘std::vector<double>’ is not derived from ‘const __gnu_cxx::__normal_iterator<_Iterator, _Container>’
+  141 |     wheel_speed_error_right = target_wheel_speeds[1] - wheel_speed_right;
+      |                                                        ^~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/bits/stl_algobase.h:67,
+                 from /usr/include/c++/11/memory:63,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:11:
+/usr/include/c++/11/bits/stl_iterator.h:577:5: note: candidate: ‘template<class _IteratorL, class _IteratorR> constexpr decltype ((__y.base() - __x.base())) std::operator-(const std::reverse_iterator<_Iterator>&, const std::reverse_iterator<_IteratorR>&)’
+  577 |     operator-(const reverse_iterator<_IteratorL>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/11/bits/stl_iterator.h:577:5: note:   template argument deduction/substitution failed:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:141:56: note:   ‘std::vector<double>’ is not derived from ‘const std::reverse_iterator<_Iterator>’
+  141 |     wheel_speed_error_right = target_wheel_speeds[1] - wheel_speed_right;
+      |                                                        ^~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/bits/stl_algobase.h:67,
+                 from /usr/include/c++/11/memory:63,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:11:
+/usr/include/c++/11/bits/stl_iterator.h:1693:5: note: candidate: ‘template<class _IteratorL, class _IteratorR> constexpr decltype ((__x.base() - __y.base())) std::operator-(const std::move_iterator<_IteratorL>&, const std::move_iterator<_IteratorR>&)’
+ 1693 |     operator-(const move_iterator<_IteratorL>& __x,
+      |     ^~~~~~~~
+/usr/include/c++/11/bits/stl_iterator.h:1693:5: note:   template argument deduction/substitution failed:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:141:56: note:   ‘std::vector<double>’ is not derived from ‘const std::move_iterator<_IteratorL>’
+  141 |     wheel_speed_error_right = target_wheel_speeds[1] - wheel_speed_right;
+      |                                                        ^~~~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In member function ‘int Turtle_Control::limit_cmd(int)’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:172:19: warning: comparison of integer expressions of different signedness: ‘int’ and ‘uint32_t’ {aka ‘unsigned int’} [-Wsign-compare]
+  172 |     if (wheel_cmd > motor_cmd_max) {
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:175:23: warning: comparison of integer expressions of different signedness: ‘int’ and ‘uint32_t’ {aka ‘unsigned int’} [-Wsign-compare]
+  175 |     else if(wheel_cmd < -motor_cmd_max) {
+      |             ~~~~~~~~~~^~~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In member function ‘void Turtle_Control::sensor_data_callback(const SensorData&)’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:202:29: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_name_type’ {aka ‘std::vector<std::__cxx11::basic_string<char> >’} and ‘const char [17]’)
+  202 |     left_wheel_state.name = "wheel_left_joint";
+      |                             ^~~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘const char [17]’ to ‘const std::vector<std::__cxx11::basic_string<char> >&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘const char [17]’ to ‘std::vector<std::__cxx11::basic_string<char> >&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘const char [17]’ to ‘std::initializer_list<std::__cxx11::basic_string<char> >’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:203:33: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_position_type’ {aka ‘std::vector<double>’} and ‘double’)
+  203 |     left_wheel_state.position = angle_left_wheel;
+      |                                 ^~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘double’ to ‘const std::vector<double>&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘double’ to ‘std::vector<double>&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = double; _Alloc = std::allocator<double>]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘double’ to ‘std::initializer_list<double>’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:204:33: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_velocity_type’ {aka ‘std::vector<double>’} and ‘double’)
+  204 |     left_wheel_state.velocity = wheel_speed_left;
+      |                                 ^~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘double’ to ‘const std::vector<double>&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘double’ to ‘std::vector<double>&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = double; _Alloc = std::allocator<double>]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘double’ to ‘std::initializer_list<double>’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:205:30: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_name_type’ {aka ‘std::vector<std::__cxx11::basic_string<char> >’} and ‘const char [18]’)
+  205 |     right_wheel_state.name = "wheel_right_joint";
+      |                              ^~~~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘const char [18]’ to ‘const std::vector<std::__cxx11::basic_string<char> >&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘const char [18]’ to ‘std::vector<std::__cxx11::basic_string<char> >&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘const char [18]’ to ‘std::initializer_list<std::__cxx11::basic_string<char> >’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:206:34: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_position_type’ {aka ‘std::vector<double>’} and ‘double’)
+  206 |     right_wheel_state.position = angle_right_wheel;
+      |                                  ^~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘double’ to ‘const std::vector<double>&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘double’ to ‘std::vector<double>&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = double; _Alloc = std::allocator<double>]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘double’ to ‘std::initializer_list<double>’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:207:34: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_velocity_type’ {aka ‘std::vector<double>’} and ‘double’)
+  207 |     right_wheel_state.velocity = wheel_speed_right;
+      |                                  ^~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘double’ to ‘const std::vector<double>&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘double’ to ‘std::vector<double>&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = double; _Alloc = std::allocator<double>]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘double’ to ‘std::initializer_list<double>’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+gmake[2]: *** [CMakeFiles/nuturtle_control.dir/build.make:90: CMakeFiles/nuturtle_control.dir/src/turtle_control.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:623: CMakeFiles/nuturtle_control.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< nuturtle_control [3.66s, exited with code 2]
+
+Summary: 4 packages finished [5.44s]
+  1 package failed: nuturtle_control
+  1 package had stderr output: nuturtle_control
+ChatGPT
+Let's address these errors for the nuturtle_control package systematically, focusing on the primary issues identified in the error log.
+
+1. Missing Header Files
+Error: Cannot find header files for sensor_msgs/msg/JointState.hpp and nuturtle_control/srv/Control.hpp.
+
+Solution: Ensure these files are correctly located within your workspace or installed packages. For sensor_msgs, this is a standard ROS message library, so make sure you have the ROS environment sourced and sensor_msgs included in your package.xml and CMakeLists.txt files. For the custom service Control.hpp, ensure the service file exists, and you have correctly added it to your CMakeLists.txt and regenerated your messages with colcon build.
+
+2. Syntax and Declaration Errors
+Error: Use of undeclared identifier time_prev_sensor, expected identifier before { token, None was not declared in this scope, and various other syntax-related errors.
+
+Solutions:
+
+time_prev_sensor does not name a type: Ensure that time_prev_sensor is declared before being used. If it's supposed to be a class member, declare it in your class header file.
+
+Expected identifier before { token: This error typically indicates a syntax error. Ensure that your class constructor initialization list is correctly formatted and that this { is part of a valid syntax structure.
+
+None was not declared: Replace None with a valid default value or remove it if it's being used as a placeholder. In C++, nullptr or a specific default value could be used, depending on the context.
+
+Array from initializer list without braces: When initializing an array or a vector, ensure you're using the correct syntax. For example, std::vector<double> myVector = {0.0, 0.0}; is valid, but assigning this directly to an array without using an initializer list syntax is incorrect.
+
+3. Incorrect Vector Usage
+Errors: Incompatible types in assignment, no match for 'operator=', and related errors when trying to assign values to std::vector.
+
+Solutions:
+
+For sensor_msgs::msg::JointState::_name_type and others: When setting values for vectors within message types, you must use methods compatible with std::vector. For example, instead of assigning a string directly to a vector, use push_back or emplace_back. For setting a single value in a position vector or velocity vector, ensure you're accessing an existing index or resizing the vector beforehand.
+
+Assigning double to a vector: Similar to above, you cannot assign a double directly to a std::vector<double>. If you're trying to set a specific index, use vector[index] = value;. If you're adding a new value, use vector.push_back(value);.
+
+4. Use of Placeholders in std::bind
+Error: '1' was not declared in this scope; did you mean 'std::placeholders::_1'?
+
+Solution: When using std::bind with placeholders, ensure you have included the placeholders namespace with using namespace std::placeholders; or prefix the placeholder with std::placeholders::_1.
+
+General Suggestions
+Review C++ syntax: Some errors indicate a misunderstanding or oversight in C++ syntax. Review how arrays, vectors, and pointers are used in C++.
+Check ROS message usage: When working with ROS messages, ensure you understand how to manipulate their fields, especially when dealing with arrays or vectors.
+Include necessary headers: For any ROS types or services you use, ensure their respective headers are included at the top of your source files.
+After addressing these errors, try rebuilding your package. If you encounter further issues or specific errors persist, it may be helpful to look at each file and error message closely to apply the correct fix.
+
+User
+Please reprint those instructions. Be clear to call out the relevant file when you can identify it.
+ChatGPT
+Let's address the errors for the nuturtle_control package in a structured manner, linking each solution to the specific file and error message.
+
+1. Missing Header Files Errors
+File: odometry.cpp & circle.cpp
+Error: Cannot find sensor_msgs/msg/JointState.hpp and nuturtle_control/srv/Control.hpp.
+Solution: Ensure sensor_msgs and your service definitions are correctly included in both package.xml and CMakeLists.txt. For custom services, verify that the service files exist and are properly added to the build process. For sensor_msgs, make sure the package is installed and your workspace is sourced correctly.
+2. Syntax and Declaration Errors
+File: turtle_control.cpp
+
+Error: time_prev_sensor does not name a type.
+Solution: Declare time_prev_sensor before its use, likely as a member variable in your class definition.
+File: turtle_control.cpp
+
+Error: Expected identifier before { token.
+Solution: This typically indicates a syntax error near this line. Check for typos or incorrect syntax, especially around constructor initialization lists or function bodies.
+File: turtle_control.cpp
+
+Error: None was not declared in this scope.
+Solution: None is not a recognized C++ identifier. If you intend to use a default or null value, consider nullptr or a specific default value for your parameter type.
+File: turtle_control.cpp
+
+Error: Assigning to an array from an initializer list.
+Solution: Ensure correct syntax when initializing arrays or vectors. If target_wheel_speeds is a vector, use std::vector<double> target_wheel_speeds = {0.0, 0.0};. Direct assignment with = is not valid for arrays after declaration.
+3. Incorrect Vector Usage
+File: turtle_control.cpp
+Error: Errors related to operator= when assigning values to vectors within ROS messages, like sensor_msgs::msg::JointState::_name_type.
+Solution: Use vector methods like push_back or emplace_back to add elements to a vector. For example, left_wheel_state.name.push_back("wheel_left_joint"); instead of direct assignment.
+4. Use of Placeholders in std::bind
+File: turtle_control.cpp
+Error: '1' was not declared in this scope; did you mean 'std::placeholders::_1'?
+Solution: Ensure you've included the correct namespace for placeholders. You can either add using namespace std::placeholders; at the top of your file or use std::placeholders::_1 directly in the std::bind call.
+General Suggestions
+Carefully review the syntax used in your source files, especially where errors are reported. Misunderstandings or typos can lead to compilation errors.
+When manipulating ROS message fields, especially those involving vectors, use appropriate STL methods for adding, accessing, or modifying elements.
+For any external libraries or message types used, ensure you have the correct #include directives at the top of your source files.
+After making these adjustments, rebuild your package. If issues persist or you encounter new errors, consider each error message's details for further troubleshooting.
+
+User
+explain how to fix this in more detail 
+File: turtle_control.cpp
+
+Error: Assigning to an array from an initializer list.
+Solution: Ensure correct syntax when initializing arrays or vectors. If target_wheel_speeds is a vector, use std::vector<double> target_wheel_speeds = {0.0, 0.0};. Direct assignment with = is not valid for arrays after declaration.
+ChatGPT
+To address the specific error in turtle_control.cpp where you're encountering an issue with assigning to an array from an initializer list, let's delve into the details and correct it based on whether target_wheel_speeds is intended to be an array or a std::vector<double>.
+
+If target_wheel_speeds is a std::vector<double>
+Vectors in C++ are dynamic arrays provided by the Standard Template Library (STL) that can change size. If target_wheel_speeds is defined as a std::vector<double>, you can initialize it directly at the point of declaration with values. However, if you're trying to assign new values to it after it has been declared, you should use the .clear() and .push_back() methods to replace its contents.
+
+Correct Approach:
+
+Initialization at Declaration:
+If you are within the constructor or initializing the vector directly upon declaration, you can use:
+
+cpp
+Copy code
+std::vector<double> target_wheel_speeds = {0.0, 0.0};
+Assignment After Declaration:
+If the vector has already been declared and you wish to assign new values later in the code, you cannot use the {} directly for assignment. Instead, do the following:
+
+cpp
+Copy code
+target_wheel_speeds.clear(); // Clear existing contents
+target_wheel_speeds.push_back(0.0); // Add first value
+target_wheel_speeds.push_back(0.0); // Add second value
+This ensures that the vector target_wheel_speeds is first cleared of its old contents before being assigned new values.
+
+If target_wheel_speeds is an Array
+If target_wheel_speeds was mistakenly referred to as a vector but is actually an array, the approach differs slightly since arrays have fixed size and cannot be resized like vectors. For an array, you cannot reassign it using {} after its initial declaration.
+
+Correct Approach:
+
+Initialization at Declaration:
+Directly at the point of declaration, you can use:
+
+cpp
+Copy code
+double target_wheel_speeds[2] = {0.0, 0.0};
+Assignment After Declaration:
+If you need to reset or change the values of an array after its declaration, you must assign values to each element individually:
+
+cpp
+Copy code
+target_wheel_speeds[0] = 0.0; // Set first element
+target_wheel_speeds[1] = 0.0; // Set second element
+Key Takeaways
+For std::vector<double>, use .clear() and .push_back() for reassignment after declaration.
+For arrays, assign new values to each element individually as arrays cannot be resized or directly reassigned using {} after the declaration.
+The choice between using a vector or an array depends on your needs for dynamic resizing and the specific operations you'll perform on the collection.
+User
+turtle_control.cpp
+File
+circle.cpp
+File
+odometry.cpp
+File
+Now I have these errors. Please help me debug. I am attaching the code file for you to review.
+
+scferro@thunkpad:~/Documents/me495_slam/ws$ colcon build
+Starting >>> nuturtlebot_msgs
+Starting >>> turtlelib
+Starting >>> nuturtle_description
+Finished <<< nuturtle_description [0.21s]                                                     
+Finished <<< turtlelib [0.32s]                                                                   
+Finished <<< nuturtlebot_msgs [0.59s]                  
+Starting >>> nusim
+Finished <<< nusim [0.59s]                     
+Starting >>> nuturtle_control
+--- stderr: nuturtle_control                             
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/odometry.cpp:18:10: fatal error: sensor_msgs/msg/JointState.hpp: No such file or directory
+   18 | #include "sensor_msgs/msg/JointState.hpp"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/circle.cpp:19:10: fatal error: nuturtle_control/srv/Control.hpp: No such file or directory
+   19 | #include "nuturtle_control/srv/Control.hpp"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+compilation terminated.
+gmake[2]: *** [CMakeFiles/nuturtle_control.dir/build.make:76: CMakeFiles/nuturtle_control.dir/src/odometry.cpp.o] Error 1
+gmake[2]: *** Waiting for unfinished jobs....
+gmake[2]: *** [CMakeFiles/nuturtle_control.dir/build.make:104: CMakeFiles/nuturtle_control.dir/src/circle.cpp.o] Error 1
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In constructor ‘Turtle_Control::Turtle_Control()’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:65:44: error: ‘class rclcpp::Time’ has no member named ‘sec’
+   65 |     time_prev_sensor = (double)(time_start.sec) + ((double)(time_start.nanosec) * 0.000000001);
+      |                                            ^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:65:72: error: ‘class rclcpp::Time’ has no member named ‘nanosec’; did you mean ‘nanoseconds’?
+   65 |     time_prev_sensor = (double)(time_start.sec) + ((double)(time_start.nanosec) * 0.000000001);
+      |                                                                        ^~~~~~~
+      |                                                                        nanoseconds
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:80:9: warning: unused variable ‘cycle_time’ [-Wunused-variable]
+   80 |     int cycle_time = 1000.0 / PID_rate;
+      |         ^~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In member function ‘int Turtle_Control::limit_cmd(int)’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:169:19: warning: comparison of integer expressions of different signedness: ‘int’ and ‘uint32_t’ {aka ‘unsigned int’} [-Wsign-compare]
+  169 |     if (wheel_cmd > motor_cmd_max) {
+      |         ~~~~~~~~~~^~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:172:23: warning: comparison of integer expressions of different signedness: ‘int’ and ‘uint32_t’ {aka ‘unsigned int’} [-Wsign-compare]
+  172 |     else if(wheel_cmd < -motor_cmd_max) {
+      |             ~~~~~~~~~~^~~~~~~~~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp: In member function ‘void Turtle_Control::sensor_data_callback(const SensorData&)’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:199:29: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_name_type’ {aka ‘std::vector<std::__cxx11::basic_string<char> >’} and ‘const char [17]’)
+  199 |     left_wheel_state.name = "wheel_left_joint";
+      |                             ^~~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘const char [17]’ to ‘const std::vector<std::__cxx11::basic_string<char> >&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘const char [17]’ to ‘std::vector<std::__cxx11::basic_string<char> >&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘const char [17]’ to ‘std::initializer_list<std::__cxx11::basic_string<char> >’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:200:33: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_position_type’ {aka ‘std::vector<double>’} and ‘double’)
+  200 |     left_wheel_state.position = angle_left_wheel;
+      |                                 ^~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘double’ to ‘const std::vector<double>&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘double’ to ‘std::vector<double>&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = double; _Alloc = std::allocator<double>]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘double’ to ‘std::initializer_list<double>’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:201:33: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_velocity_type’ {aka ‘std::vector<double>’} and ‘double’)
+  201 |     left_wheel_state.velocity = wheel_speed_left;
+      |                                 ^~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘double’ to ‘const std::vector<double>&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘double’ to ‘std::vector<double>&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = double; _Alloc = std::allocator<double>]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘double’ to ‘std::initializer_list<double>’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:202:30: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_name_type’ {aka ‘std::vector<std::__cxx11::basic_string<char> >’} and ‘const char [18]’)
+  202 |     right_wheel_state.name = "wheel_right_joint";
+      |                              ^~~~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘const char [18]’ to ‘const std::vector<std::__cxx11::basic_string<char> >&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘const char [18]’ to ‘std::vector<std::__cxx11::basic_string<char> >&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = std::__cxx11::basic_string<char>; _Alloc = std::allocator<std::__cxx11::basic_string<char> >]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘const char [18]’ to ‘std::initializer_list<std::__cxx11::basic_string<char> >’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:203:34: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_position_type’ {aka ‘std::vector<double>’} and ‘double’)
+  203 |     right_wheel_state.position = angle_right_wheel;
+      |                                  ^~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘double’ to ‘const std::vector<double>&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘double’ to ‘std::vector<double>&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = double; _Alloc = std::allocator<double>]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘double’ to ‘std::initializer_list<double>’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:204:34: error: no match for ‘operator=’ (operand types are ‘sensor_msgs::msg::JointState_<std::allocator<void> >::_velocity_type’ {aka ‘std::vector<double>’} and ‘double’)
+  204 |     right_wheel_state.velocity = wheel_speed_right;
+      |                                  ^~~~~~~~~~~~~~~~~
+In file included from /usr/include/c++/11/vector:72,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/vector.tcc:198:5: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(const std::vector<_Tp, _Alloc>&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  198 |     vector<_Tp, _Alloc>::
+      |     ^~~~~~~~~~~~~~~~~~~
+/usr/include/c++/11/bits/vector.tcc:199:42: note:   no known conversion for argument 1 from ‘double’ to ‘const std::vector<double>&’
+  199 |     operator=(const vector<_Tp, _Alloc>& __x)
+      |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+In file included from /usr/include/c++/11/vector:67,
+                 from /usr/include/c++/11/bits/random.h:34,
+                 from /usr/include/c++/11/random:49,
+                 from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/turtle_control.cpp:13:
+/usr/include/c++/11/bits/stl_vector.h:709:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::vector<_Tp, _Alloc>&&) [with _Tp = double; _Alloc = std::allocator<double>]’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:709:26: note:   no known conversion for argument 1 from ‘double’ to ‘std::vector<double>&&’
+  709 |       operator=(vector&& __x) noexcept(_Alloc_traits::_S_nothrow_move())
+      |                 ~~~~~~~~~^~~
+/usr/include/c++/11/bits/stl_vector.h:730:7: note: candidate: ‘std::vector<_Tp, _Alloc>& std::vector<_Tp, _Alloc>::operator=(std::initializer_list<_Tp>) [with _Tp = double; _Alloc = std::allocator<double>]’
+  730 |       operator=(initializer_list<value_type> __l)
+      |       ^~~~~~~~
+/usr/include/c++/11/bits/stl_vector.h:730:46: note:   no known conversion for argument 1 from ‘double’ to ‘std::initializer_list<double>’
+  730 |       operator=(initializer_list<value_type> __l)
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+gmake[2]: *** [CMakeFiles/nuturtle_control.dir/build.make:90: CMakeFiles/nuturtle_control.dir/src/turtle_control.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:623: CMakeFiles/nuturtle_control.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< nuturtle_control [3.05s, exited with code 2]
+
+Summary: 4 packages finished [4.78s]
+  1 package failed: nuturtle_control
+  1 package had stderr output: nuturtle_control
+ChatGPT
+To address the compilation errors in your ROS project, we'll focus on the errors listed for the nuturtle_control package, specifically in the turtle_control.cpp, circle.cpp, and odometry.cpp files. Let's start with the key issues identified:
+
+1. Missing Header Files (sensor_msgs/msg/JointState.hpp and nuturtle_control/srv/Control.hpp)
+These errors indicate that the compiler cannot find the specified header files. This can happen for several reasons:
+
+For sensor_msgs/msg/JointState.hpp: This file is part of the standard ROS 2 sensor_msgs package. Ensure that your package.xml includes a dependency on sensor_msgs and that your CMakeLists.txt file finds and links this package correctly.
+
+xml
+Copy code
+<!-- package.xml -->
+<depend>sensor_msgs</depend>
+cmake
+Copy code
+# CMakeLists.txt
+find_package(sensor_msgs REQUIRED)
+For nuturtle_control/srv/Control.hpp: This error suggests that either the service file does not exist, or the build system is not correctly generating service headers from it. Ensure the service definition exists in the correct directory (srv/Control.srv) and is listed in your CMakeLists.txt for message generation.
+
+cmake
+Copy code
+# CMakeLists.txt
+find_package(rosidl_default_generators REQUIRED)
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "srv/Control.srv"
+  # Other message/service files
+)
+2. Usage of rclcpp::Time
+The errors in turtle_control.cpp regarding rclcpp::Time suggest an incorrect use of the time API:
+
+Error: 'class rclcpp::Time' has no member named 'sec'
+
+Solution: In ROS 2, rclcpp::Time uses seconds() and nanoseconds() methods instead of direct field access. To get the time as a double value in seconds, you can use:
+
+cpp
+Copy code
+double time_prev_sensor = time_start.seconds();
+If you need to combine seconds and nanoseconds into a single double value, you already have the correct approach with seconds().
+
+3. Incorrect Assignment to std::vector
+The errors related to assigning const char[] (string literals) and double values directly to std::vector fields of a sensor_msgs::msg::JointState message indicate a misuse of vectors:
+
+Solution: When setting the name, position, or velocity in sensor_msgs::msg::JointState, you should use vector methods like push_back for each element. For example:
+
+cpp
+Copy code
+left_wheel_state.name.push_back("wheel_left_joint");
+left_wheel_state.position.push_back(angle_left_wheel);
+left_wheel_state.velocity.push_back(wheel_speed_left);
+General Recommendations
+Ensure ROS 2 Environment Sourced: Before building, make sure your ROS 2 environment is sourced (source /opt/ros/<distro>/setup.bash).
+Check for Typographical Errors: Ensure all file paths and names are correct, especially for custom services and messages.
+Rebuild After Changes: After making changes to package.xml or CMakeLists.txt, perform a clean build to ensure all changes are applied.
+I will now proceed to review the provided code files directly to offer more specific guidance.
+
+First, let's address the issues identified in the turtle_control.cpp file based on the error messages provided:
+
+Errors in turtle_control.cpp
+Use of rclcpp::Time Members (sec and nanosec):
+
+The ROS 2 rclcpp::Time class does not have sec and nanosec members. Instead, you should use the seconds() method to get the time in seconds as a floating-point number, or nanoseconds() to get the time in nanoseconds as an integer.
+If you need both seconds and nanoseconds for a calculation, consider the purpose of the calculation to determine the appropriate method to use.
+Incorrect Assignment to Vectors (sensor_msgs::msg::JointState::_name_type and others):
+
+Directly assigning a string literal or a double to a vector, such as sensor_msgs::msg::JointState::_name_type, is incorrect because these are std::vector types.
+Use push_back() to add elements to these vectors. For example, to set the name of a joint state message, use left_wheel_state.name.push_back("wheel_left_joint");.
+General Fix Strategy
+For Time Handling:
+
+cpp
+Copy code
+// Assuming 'time_start' is of type rclcpp::Time
+double time_prev_sensor = time_start.seconds();
+This converts the rclcpp::Time object to a double representing the time in seconds since the epoch.
+
+For Vector Assignments:
+
+To assign values to the name, position, and velocity fields of a JointState message, use the push_back() method for each value you wish to add. This is because these fields are vectors, and you're adding elements to them.
+cpp
+Copy code
+// Assuming 'left_wheel_state' is of type sensor_msgs::msg::JointState
+left_wheel_state.name.clear();
+left_wheel_state.name.push_back("wheel_left_joint");
+left_wheel_state.position.clear();
+left_wheel_state.position.push_back(angle_left_wheel); // Ensure 'angle_left_wheel' is defined and calculated previously
+left_wheel_state.velocity.clear();
+left_wheel_state.velocity.push_back(wheel_speed_left); // Ensure 'wheel_speed_left' is defined and calculated previously
+Implementing the Solutions
+Ensure that every time you want to work with time values, you are using the appropriate methods provided by rclcpp::Time.
+When dealing with std::vector fields in ROS messages, always use vector operations to modify these fields. This means using push_back() to add new elements, clear() if you need to reset them, and accessing elements via the [] operator if needed.
+These changes should address the compilation errors related to turtle_control.cpp. If you encounter further issues or have errors in other files (circle.cpp, odometry.cpp), please apply similar principles based on the specific error messages, or let me know
+
+User
+please reprint this and call out the specific files you are referencing.
+ChatGPT
+Let's address the specific issues identified in the turtle_control.cpp file, based on the compilation errors you've encountered:
+
+Errors and Solutions for turtle_control.cpp
+Use of rclcpp::Time Members (sec and nanosec):
+
+File: turtle_control.cpp
+Error: The ROS 2 rclcpp::Time class does not have sec and nanosec members.
+Solution: Use the seconds() method for time in seconds as a floating-point number, or nanoseconds() for time in nanoseconds as an integer. If the purpose is to calculate a time difference or a precise time value in seconds, use:
+cpp
+Copy code
+double time_prev_sensor = time_start.seconds(); // Converts rclcpp::Time to seconds.
+This handles the conversion of the rclcpp::Time object to a double representing the time in seconds since the epoch, addressing the errors related to accessing sec and nanosec.
+
+Incorrect Assignment to Vectors (sensor_msgs::msg::JointState::_name_type and others):
+
+File: turtle_control.cpp
+Error: Directly assigning a string literal or a double to vectors, such as sensor_msgs::msg::JointState::_name_type, which are std::vector types.
+Solution: Use push_back() to add elements to these vectors. For instance, to set the name of a joint state message, use:
+cpp
+Copy code
+left_wheel_state.name.clear();
+left_wheel_state.name.push_back("wheel_left_joint");
+left_wheel_state.position.clear();
+left_wheel_state.position.push_back(angle_left_wheel); // Ensure 'angle_left_wheel' is previously defined and calculated
+left_wheel_state.velocity.clear();
+left_wheel_state.velocity.push_back(wheel_speed_left); // Ensure 'wheel_speed_left' is previously defined and calculated
+This approach ensures you are correctly adding elements to the std::vector fields of the sensor_msgs::msg::JointState message, including name, position, and velocity.
+Implementing the Solutions in turtle_control.cpp
+Time Handling: When working with rclcpp::Time, always utilize the appropriate methods (seconds() or nanoseconds()) to avoid direct member access errors. This will correct the issues related to time_start.sec and time_start.nanosec.
+
+Vector Assignments: For modifying std::vector fields in ROS messages, adhere to using vector operations like push_back() for adding new elements. This resolves the errors related to assigning string literals or doubles directly to vector fields.
+
+These targeted solutions should help rectify the compilation errors within the turtle_control.cpp file. If additional issues arise or there are errors in other files (circle.cpp, odometry.cpp), similar principles should be applied, focusing on the type and method appropriate for the operation being performed.
+
+User
+Now help with this
+
+scferro@thunkpad:~/Documents/me495_slam/ws$ colcon build
+Starting >>> nuturtlebot_msgs
+Starting >>> turtlelib
+Starting >>> nuturtle_description
+Finished <<< nuturtle_description [0.19s]                                                     
+Finished <<< turtlelib [0.26s]
+Finished <<< nuturtlebot_msgs [0.63s]                     
+Starting >>> nusim
+Finished <<< nusim [0.49s]                     
+Starting >>> nuturtle_control
+--- stderr: nuturtle_control                             
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/circle.cpp: In member function ‘void Circle::control_callback(nuturtle_control::srv::Control_Request_<std::allocator<void> >::SharedPtr, nuturtle_control::srv::Control_Response_<std::allocator<void> >::SharedPtr)’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/circle.cpp:123:32: error: ‘using SharedPtr = class std::shared_ptr<nuturtle_control::srv::Control_Request_<std::allocator<void> > >’ {aka ‘class std::shared_ptr<nuturtle_control::srv::Control_Request_<std::allocator<void> > >’} has no member named ‘velocity’
+  123 |     angular_velocity = request.velocity;
+      |                                ^~~~~~~~
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/circle.cpp:124:22: error: ‘using SharedPtr = class std::shared_ptr<nuturtle_control::srv::Control_Request_<std::allocator<void> > >’ {aka ‘class std::shared_ptr<nuturtle_control::srv::Control_Request_<std::allocator<void> > >’} has no member named ‘radius’
+  124 |     radius = request.radius;
+      |                      ^~~~~~
+gmake[2]: *** [CMakeFiles/nuturtle_control.dir/build.make:104: CMakeFiles/nuturtle_control.dir/src/circle.cpp.o] Error 1
+gmake[2]: *** Waiting for unfinished jobs....
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/odometry.cpp: In constructor ‘Odometry::Odometry()’:
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/odometry.cpp:35:3: error: expected identifier before ‘{’ token
+   35 |   {
+      |   ^
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/odometry.cpp:35:3: error: no matching function for call to ‘turtlelib::DiffDrive::DiffDrive()’
+In file included from /home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/odometry.cpp:22:
+/home/scferro/Documents/me495_slam/ws/install/turtlelib/include/turtlelib/diff_drive.hpp:41:18: note: candidate: ‘turtlelib::DiffDrive::DiffDrive(double, double, double, double, double)’
+   41 |         explicit DiffDrive(double radius, double track, double x_pos, double y_pos, double theta);
+      |                  ^~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/install/turtlelib/include/turtlelib/diff_drive.hpp:41:18: note:   candidate expects 5 arguments, 0 provided
+/home/scferro/Documents/me495_slam/ws/install/turtlelib/include/turtlelib/diff_drive.hpp:36:18: note: candidate: ‘turtlelib::DiffDrive::DiffDrive(double, double)’
+   36 |         explicit DiffDrive(double radius, double track);
+      |                  ^~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/install/turtlelib/include/turtlelib/diff_drive.hpp:36:18: note:   candidate expects 2 arguments, 0 provided
+/home/scferro/Documents/me495_slam/ws/install/turtlelib/include/turtlelib/diff_drive.hpp:15:11: note: candidate: ‘constexpr turtlelib::DiffDrive::DiffDrive(const turtlelib::DiffDrive&)’
+   15 |     class DiffDrive
+      |           ^~~~~~~~~
+/home/scferro/Documents/me495_slam/ws/install/turtlelib/include/turtlelib/diff_drive.hpp:15:11: note:   candidate expects 1 argument, 0 provided
+/home/scferro/Documents/me495_slam/ws/install/turtlelib/include/turtlelib/diff_drive.hpp:15:11: note: candidate: ‘constexpr turtlelib::DiffDrive::DiffDrive(turtlelib::DiffDrive&&)’
+/home/scferro/Documents/me495_slam/ws/install/turtlelib/include/turtlelib/diff_drive.hpp:15:11: note:   candidate expects 1 argument, 0 provided
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/odometry.cpp:84:18: error: ‘O’ has not been declared
+   84 |       std::bind(&O::initial_pose_callback, this, std::placeholders::_1, std::placeholders::_2));
+      |                  ^
+gmake[2]: *** [CMakeFiles/nuturtle_control.dir/build.make:76: CMakeFiles/nuturtle_control.dir/src/odometry.cpp.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:625: CMakeFiles/nuturtle_control.dir/all] Error 2
+gmake: *** [Makefile:146: all] Error 2
+---
+Failed   <<< nuturtle_control [4.17s, exited with code 2]
+
+Summary: 4 packages finished [5.86s]
+  1 package failed: nuturtle_control
+  1 package had stderr output: nuturtle_control
+ChatGPT
+The errors in your ROS 2 package nuturtle_control within circle.cpp and odometry.cpp can be addressed as follows:
+
+circle.cpp Errors:
+Access to Nonexistent Fields in Service Request (velocity and radius):
+File: circle.cpp
+Error Description: The service request nuturtle_control::srv::Control_Request_ does not contain members named velocity and radius.
+Solution: Ensure that the service definition (Control.srv) includes these fields. If these fields exist in the service definition, regenerate the service headers by running the build process (colcon build) after ensuring the service definition is correctly updated and saved. Also, access the fields correctly as per the generated service header files, typically via request->field_name for shared pointers in callbacks.
+odometry.cpp Errors:
+Syntax Error in Constructor Initialization:
+
+File: odometry.cpp
+Error Description: There's a syntax error or misplaced { in the constructor of the Odometry class which is causing confusion about how to initialize the DiffDrive object.
+Solution: Ensure proper constructor initialization syntax is used. If you are trying to initialize an object of DiffDrive, you need to pass the required parameters as per the constructor definitions available in diff_drive.hpp. For example, if DiffDrive requires two parameters (radius and track), initialize it in the Odometry constructor's member initializer list:
+cpp
+Copy code
+Odometry::Odometry() : diff_drive(radius, track) {
+    // Constructor body
+}
+This assumes radius and track are known or provided as constructor parameters to Odometry.
+
+Incorrect Use of std::bind for Member Function Callback:
+
+Error: 'O' has not been declared
+Solution: The error suggests a typo or incorrect reference to the class method in std::bind. Ensure you're using the correct class name or object instance when binding member functions. If you're inside the Odometry class and binding a member function, use this and the correct function name without a class prefix:
+cpp
+Copy code
+std::bind(&Odometry::initial_pose_callback, this, std::placeholders::_1, std::placeholders::_2);
+General Recommendations:
+Review Service Definitions: For circle.cpp, double-check the Control.srv file to ensure it correctly defines velocity and radius fields. After any changes, remember to rebuild your package.
+Constructor Initialization: For odometry.cpp, make sure you're using the correct syntax for initializing class members and that the constructor calls match the available constructors in diff_drive.hpp.
+Correct Member Function Binding: Ensure you're using this correctly to refer to the current instance when binding member functions in callbacks, and verify the function names match those declared in your class.
+Apply these solutions to the respective files, and your build should proceed further without these errors. If new errors emerge or if there's confusion about applying these fixes, please provide additional details for further assistance.
+
+User
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/odometry.cpp:35:3: error: expected identifier before ‘{’ token
+   35 |   {
+      |   ^
+ChatGPT
+The error message you're seeing in odometry.cpp suggests a syntax issue around line 35. Specifically, the compiler expected an identifier before the { token, which usually indicates a problem with how a constructor, function, or another block of code is defined or invoked.
+
+Possible Causes and Fixes
+Misplaced or Incorrect Constructor Initialization:
+
+This error can occur if there's a misplaced { that the compiler doesn't expect at that point in the code. This often happens in constructor initialization lists or at the beginning of a function definition.
+Fix: Ensure that the constructor or function definition syntax is correct. If you are initializing members or base classes in a constructor, the syntax should be:
+cpp
+Copy code
+ClassName::ClassName(parameters) : member1(value1), member2(value2) {
+    // Constructor body
+}
+Make sure there are no stray { before or after the constructor initialization list.
+Incorrect Block Definition:
+
+If the { is intended to start a block of code (like a function body, loop, or conditional), ensure it follows the correct statement that expects a block.
+Fix: Verify that all control structures (if, while, for, etc.) and function definitions are correctly formulated before the block starts.
+Typographical Errors:
+
+A common cause for such errors is a typographical mistake or missing code elements (like a missing semicolon ; before the block or incorrect use of brackets).
+Fix: Check the lines of code immediately preceding the error for missing semicolons, misplaced brackets, or other typographical errors that could confuse the compiler.
+Steps to Diagnose Further
+Review Context: Look at the full context around line 35 in odometry.cpp.
+User
+odometry.cpp
+File
+/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control/src/odometry.cpp:35:3: error: expected identifier before ‘{’ token
+   35 |   {
+      |   ^
+please fix this
+ChatGPT
+Let's directly address the syntax issue in your odometry.cpp file by examining and correcting the specific part of the code that led to the error. Given the nature of the error, it seems there might be an incorrect syntax used around line 35, possibly related to a constructor initialization or the beginning of a function block.
+
+I'll review the content of the odometry.cpp file to identify the error and propose a correction. Please wait a moment while I perform this analysis.
+
+The excerpt from your odometry.cpp file around the problematic area shows a syntax issue in the constructor definition of the Odometry class. Specifically, the error is in how the constructor's member initializer list is written:
+
+cpp
+Copy code
+class Odometry : public rclcpp::Node
+{
+public:
+  Odometry()
+  : Node("odometry"), 
+  {
+    // Parameters and default values
+    declare_parameter("body_id", "");
+    declare_parameter("odom_id", "odom");
+    declare_parameter("wheel_left", "");
+    declare_parameter("wheel_right", "");
+Identified Problem
+The issue is with the extraneous comma after the member initializer list for the Node base class constructor call and before the opening brace { of the constructor body. This comma is incorrectly placed, leading to the syntax error you're encountering.
+
+Solution
+To fix this error, you should remove the comma after the base class (Node) constructor call in the member initializer list. The corrected constructor should look like this:
+
+cpp
+Copy code
+Odometry()
+  : Node("odometry")
+{
+    // Parameters and default values
+    declare_parameter("body_id", "");
+    declare_parameter("odom_id", "odom");
+    declare_parameter("wheel_left", "");
+    declare_parameter("wheel_right", "");
+    // Continue with the constructor implementation
+}
+After making this change, your odometry.cpp file should compile correctly without the reported syntax error. This adjustment ensures the constructor's member initializer list is correctly formatted, adhering to C++ syntax rules. ​​
+
+User
+what should i do here?
+
+scferro@thunkpad:~/Documents/me495_slam/ws$ colcon test-result --all --verbose
+build/nusim/Testing/20240209-1908/Test.xml: 4 tests, 0 errors, 0 failures, 0 skipped
+build/nusim/test_results/nusim/cppcheck.xunit.xml: 1 test, 0 errors, 0 failures, 1 skipped
+build/nusim/test_results/nusim/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped
+build/nusim/test_results/nusim/uncrustify.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped
+build/nusim/test_results/nusim/xmllint.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped
+build/nuturtle_control/Testing/20240209-1908/Test.xml: 4 tests, 0 errors, 1 failure, 0 skipped
+- uncrustify
+  <<< failure message
+    -- run_test.py: invoking following command in '/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nuturtle_control':
+     - /opt/ros/iron/bin/ament_uncrustify --xunit-file /home/scferro/Documents/me495_slam/ws/build/nuturtle_control/test_results/nuturtle_control/uncrustify.xunit.xml
+    Code style divergence in file 'src/turtle_control.cpp':
+    
+    --- src/turtle_control.cpp
+    +++ src/turtle_control.cpp.uncrustify
+    @@ -228 +228 @@
+    -}
+    +}
+    
+    1 files with code style divergence
+    No code style divergence in file 'src/circle.cpp'
+    
+    No code style divergence in file 'src/odometry.cpp'
+    
+    -- run_test.py: return code 1
+    -- run_test.py: verify result file '/home/scferro/Documents/me495_slam/ws/build/nuturtle_control/test_results/nuturtle_control/uncrustify.xunit.xml'
+  >>>
+build/nuturtle_control/test_results/nuturtle_control/cppcheck.xunit.xml: 3 tests, 0 errors, 0 failures, 3 skipped
+build/nuturtle_control/test_results/nuturtle_control/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped
+build/nuturtle_control/test_results/nuturtle_control/uncrustify.xunit.xml: 3 tests, 0 errors, 1 failure, 0 skipped
+- nuturtle_control.uncrustify src/turtle_control.cpp
+  <<< failure message
+    Diff with 5 lines
+  >>>
+build/nuturtle_control/test_results/nuturtle_control/xmllint.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped
+build/nuturtle_description/Testing/20240209-1908/Test.xml: 4 tests, 0 errors, 0 failures, 0 skipped
+build/nuturtle_description/test_results/nuturtle_description/flake8.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped
+build/nuturtle_description/test_results/nuturtle_description/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped
+build/nuturtle_description/test_results/nuturtle_description/pep257.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped
+build/nuturtle_description/test_results/nuturtle_description/xmllint.xunit.xml: 2 tests, 0 errors, 0 failures, 0 skipped
+build/turtlelib/Testing/20240209-1908/Test.xml: 4 tests, 0 errors, 0 failures, 0 skipped
+
+Summary: 34 tests, 0 errors, 2 failures, 4 skipped
+ChatGPT
+The test results you've shared indicate that there's a code style divergence issue with the file src/turtle_control.cpp in the nuturtle_control package, as detected by the ament_uncrustify tool. Uncrustify is a tool used in ROS 2 to ensure that the code follows specific style guidelines, which helps maintain readability and consistency across the codebase.
+
+Steps to Resolve the Issue:
+Run Uncrustify Locally:
+
+To see and fix the specific code style issues, you can run ament_uncrustify locally on the turtle_control.cpp file. This command will also show you the expected changes. Navigate to your package directory and run:
+css
+Copy code
+ament_uncrustify --reformat src/turtle_control.cpp
+This command will not only check but also attempt to reformat the file according to the ROS 2 style guidelines.
+Review and Apply Changes:
+
+After running the command, review the changes suggested or applied by Uncrustify. It's important to manually verify these changes to ensure they don't unintentionally alter the code's logic or functionality.
+Re-run Tests:
+
+Once you've applied the recommended style changes, re-run the tests to confirm that the style divergence issue has been resolved:
+css
+Copy code
+colcon test --packages-select nuturtle_control
+colcon test-result --all --verbose
+Commit and Push Changes (if using version control):
+
+If you're using a version control system (like Git), commit the changes to your code style after verifying that the tests pass without style divergence errors. This step ensures that your repository maintains a consistent code style and adheres to the project's coding standards.
+Address Any Remaining Issues:
+
+If there are any other errors or failures reported by the test results, address them similarly by examining the error messages and making the necessary corrections.
+By following these steps, you should be able to resolve the code style divergence issue in turtle_control.cpp and improve your package's adherence to ROS 2 style guidelines.

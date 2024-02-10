@@ -12,6 +12,9 @@ using turtlelib::Transform2D;
 using turtlelib::Twist2D;
 using turtlelib::DiffDrive;
 
+// Used ChatGPT for debugging
+// Refer to Citation [1] ChatGPT
+
 TEST_CASE("Update state, both wheel rotate forwards (pure translation)", "[DiffDrive]") // Stephen Ferro
 {
     DiffDrive diff_drive = DiffDrive(0.1, 0.5);
