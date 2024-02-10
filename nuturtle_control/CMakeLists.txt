@@ -66,6 +66,7 @@ install(TARGETS
 install(DIRECTORY
   launch
   srv
+  config
   DESTINATION share/${PROJECT_NAME}/
 )
 

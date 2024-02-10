@@ -30,8 +30,8 @@ public:
   : Node("circle")
   {
     // Parameters and default values
-    declare_parameter("angular_velocity", 0.1);
-    declare_parameter("radius", 0.25);
+    declare_parameter("angular_velocity", 1.0);
+    declare_parameter("radius", 1.0);
     declare_parameter("frequency", 100);
 
     // Define parameter variables

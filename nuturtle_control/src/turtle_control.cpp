@@ -60,10 +60,7 @@ public:
     wheel_speed_cum_error_right = 0.0;
     wheel_speed_error_left_prev = 0.0;
     wheel_speed_error_right_prev = 0.0;
-    PID_rate = 100;
-    P = 1.0;
-    I = 0.0;
-    D = 0.0;
+    loop_rate = 100;
 
     // Initiallize timers
     rclcpp::Time time_start = this->get_clock()->now();
@@ -82,7 +79,7 @@ public:
       10, std::bind(&Turtle_Control::sensor_data_callback, this, std::placeholders::_1));
 
     // Main timer
-    int cycle_time = 1000.0 / PID_rate;
+    int cycle_time = 1000.0 / loop_rate;
     main_timer = this->create_wall_timer(
       std::chrono::milliseconds(cycle_time),
       std::bind(&Turtle_Control::timer_callback, this));
@@ -95,7 +92,7 @@ private:
   int motor_cmd_max;
   double motor_cmd_per_rad_sec, encoder_ticks_per_rad, collision_radius;
   std::vector<double> target_wheel_speeds = {0.0, 0.0};
-  uint64_t left_encoder_ticks, right_encoder_ticks, left_encoder_ticks_prev,
+  int left_encoder_ticks, right_encoder_ticks, left_encoder_ticks_prev,
     right_encoder_ticks_prev;
   double time_now_sensor, time_prev_sensor;
   double angle_left_wheel, angle_right_wheel;
@@ -103,8 +100,7 @@ private:
   double wheel_speed_error_left, wheel_speed_error_right,
     wheel_speed_error_left_prev, wheel_speed_error_right_prev,
     wheel_speed_cum_error_left, wheel_speed_cum_error_right;
-  double P, I, D;
-  int PID_rate;
+  int loop_rate;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::Publisher<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr wheel_cmd_pub;
@@ -130,35 +126,20 @@ private:
     target_wheel_speeds = diff_drive.inverse_kinematics(twist);
   }
 
-  /// \brief The main timer callback, PID loop for both wheels
+  /// \brief The main timer callback, loop for both wheels
   void timer_callback()
   {
     // Initialize local variables and messages
-    double left_wheel_accel_error, right_wheel_accel_error;
-    int wheel_cmd_left, wheel_cmd_right;
+    double wheel_cmd_left, wheel_cmd_right;
     nuturtlebot_msgs::msg::WheelCommands wheel_commands;
 
-    // Calculate wheel speed errors
-    wheel_speed_error_left = target_wheel_speeds[0] - wheel_speed_left;
-    wheel_speed_error_right = target_wheel_speeds[1] - wheel_speed_right;
-    wheel_speed_cum_error_left += wheel_speed_error_left / PID_rate;
-    wheel_speed_cum_error_right += wheel_speed_error_right / PID_rate;
-    left_wheel_accel_error = (wheel_speed_error_left - wheel_speed_error_left_prev) / PID_rate;
-    right_wheel_accel_error = (wheel_speed_error_right - wheel_speed_error_right_prev) / PID_rate;
-
     // Calculate wheel commands
-    wheel_cmd_left =
-      (int)((wheel_speed_error_left * P) + (wheel_speed_cum_error_left * I) +
-      (left_wheel_accel_error * D));
-    wheel_cmd_right =
-      (int)((wheel_speed_error_right * P) + (wheel_speed_cum_error_right * I) +
-      (right_wheel_accel_error * D));
-    wheel_cmd_left = limit_cmd(wheel_cmd_left);
-    wheel_cmd_right = limit_cmd(wheel_cmd_right);
+    wheel_cmd_left = target_wheel_speeds[0] / motor_cmd_per_rad_sec;
+    wheel_cmd_right = target_wheel_speeds[1] / motor_cmd_per_rad_sec;
 
     // Enter wheel commands into message
-    wheel_commands.left_velocity = wheel_cmd_left;
-    wheel_commands.right_velocity = wheel_cmd_right;
+    wheel_commands.left_velocity = -limit_cmd(wheel_cmd_left);
+    wheel_commands.right_velocity = -limit_cmd(wheel_cmd_right);
 
     // Update wheel_speed_error_prev
     wheel_speed_error_left_prev = wheel_speed_error_left;
@@ -169,15 +150,14 @@ private:
   }
 
   /// \brief Limits the range of a wheel_cmd to [-motor_cmd_max, motor_cmd_max]
-  int limit_cmd(int wheel_cmd)
+  int limit_cmd(double wheel_cmd)
   {
     if (wheel_cmd > motor_cmd_max) {
       wheel_cmd = motor_cmd_max;
     } else if (wheel_cmd < -motor_cmd_max) {
       wheel_cmd = -motor_cmd_max;
     }
-
-    return wheel_cmd;
+    return static_cast<int>(wheel_cmd);
   }
 
   /// \brief The sensor_data callback function, publishes the current joint_states of the wheels based on received sensor_data

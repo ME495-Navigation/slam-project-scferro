@@ -1,7 +1,7 @@
 <launch>
     <!-- Arguments -->
     <arg name="config_file" default="basic_world.yaml"/>
-    <arg name="use_rviz" default="true"/>
+    <arg name="use_rviz_sim" default="true"/>
 
     <!-- Launch nusim node -->
     <node pkg="nusim" exec="nusim" name="nusim">
@@ -15,5 +15,5 @@
     </include>
 
     <!-- Launch RViz -->
-    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nusim)/config/nusim.rviz" if="$(eval '\'$(var use_rviz)\' == \'true\'')"/>
+    <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nusim)/config/nusim.rviz" if="$(eval '\'$(var use_rviz_sim)\' == \'true\'')"/>
 </launch>

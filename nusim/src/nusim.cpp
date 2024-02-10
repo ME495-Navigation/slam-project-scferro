@@ -40,7 +40,6 @@
 #include "nusim/srv/teleport.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_ros/transform_broadcaster.h"
-#include "nuturtlebot_msgs/msg/sensor_data.hpp"
 #include "nuturtlebot_msgs/msg/wheel_commands.hpp"
 #include "turtlelib/diff_drive.hpp"
 
@@ -62,7 +61,7 @@ public:
     declare_parameter("obstacles_x", std::vector<double>{});
     declare_parameter("obstacles_y", std::vector<double>{});
     declare_parameter("obstacles_radius", 0.038);
-    declare_parameter("max_wheel_vel", 2.84);
+    declare_parameter("motor_cmd_per_rad_sec", 0.024);
     declare_parameter("wheel_radius", 0.066);
     declare_parameter("track_width", 0.160);
 
@@ -76,7 +75,7 @@ public:
     obstacles_x = get_parameter("obstacles_x").as_double_array();
     obstacles_y = get_parameter("obstacles_y").as_double_array();
     obstacles_radius = get_parameter("obstacles_radius").as_double();
-    max_wheel_vel = get_parameter("max_wheel_vel").as_double();
+    motor_cmd_per_rad_sec = get_parameter("motor_cmd_per_rad_sec").as_double();
     wheel_radius = get_parameter("wheel_radius").as_double();
     track_width = get_parameter("track_width").as_double();
 
@@ -123,7 +122,7 @@ private:
   double arena_x_length;
   double arena_y_length;
   double wheel_radius, track_width;
-  double right_wheel_vel, left_wheel_vel, max_wheel_vel;
+  double right_wheel_vel, left_wheel_vel, motor_cmd_per_rad_sec;
   turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
   std::vector<double> obstacles_x;
   std::vector<double> obstacles_y;
@@ -143,7 +142,7 @@ private:
   /// \brief The main timer callback function, publishes the current timestep, broadcasts groundtruth transform
   void timer_callback()
   {
-    geometry_msgs::msg::TransformStamped tf_base, tf_left_wheel, tf_right_wheel;
+    geometry_msgs::msg::TransformStamped tf_base;
     tf2::Quaternion quat_robot, quat_left, quat_right;
     auto message = std_msgs::msg::UInt64();
     double delta_left_wheel, delta_right_wheel, left_wheel_angle, right_wheel_angle;
@@ -187,36 +186,7 @@ private:
     tf_base.transform.rotation.z = quat_robot.z();
     tf_base.transform.rotation.w = quat_robot.w();
 
-    // Create wheel transforms
-    tf_left_wheel.header.stamp = get_clock()->now();
-    tf_right_wheel.header.frame_id = "red/wheel_right_link";
-    tf_right_wheel.child_frame_id = "red/wheel_right_link";
-    tf_left_wheel.transform.translation.x = 0.0;
-    tf_left_wheel.transform.translation.y = 0.0;
-    tf_left_wheel.transform.translation.z = 0.0;
-
-    tf_right_wheel.header.stamp = get_clock()->now();
-    tf_right_wheel.header.frame_id = "red/wheel_left_link";
-    tf_right_wheel.child_frame_id = "red/wheel_left_link";
-    tf_right_wheel.transform.translation.x = 0.0;
-    tf_right_wheel.transform.translation.y = 0.0;
-    tf_right_wheel.transform.translation.z = 0.0;
-
-    quat_left.setRPY(0, 0, delta_left_wheel);
-    tf_left_wheel.transform.rotation.x = quat_left.x();
-    tf_left_wheel.transform.rotation.y = quat_left.y();
-    tf_left_wheel.transform.rotation.z = quat_left.z();
-    tf_left_wheel.transform.rotation.w = quat_left.w();
-
-    quat_right.setRPY(0, 0, delta_right_wheel);
-    tf_right_wheel.transform.rotation.x = quat_right.x();
-    tf_right_wheel.transform.rotation.y = quat_right.y();
-    tf_right_wheel.transform.rotation.z = quat_right.z();
-    tf_right_wheel.transform.rotation.w = quat_right.w();
-
     // Publish transforms
-    tf_broadcaster->sendTransform(tf_left_wheel);
-    tf_broadcaster->sendTransform(tf_right_wheel);
     tf_broadcaster->sendTransform(tf_base);
 
     // Publish walls
@@ -232,8 +202,12 @@ private:
   /// \brief The wheel_cmd callback function, updates wheel speeds and robot ground truth position
   void wheel_cmd_callback(const nuturtlebot_msgs::msg::WheelCommands & msg)
   {
-    left_wheel_vel = (msg.left_velocity / 265) * max_wheel_vel;
-    right_wheel_vel = (msg.right_velocity / 265) * max_wheel_vel;
+    int left_vel_in, right_vel_in;
+    left_vel_in = msg.left_velocity;
+    right_vel_in = msg.right_velocity;
+
+    left_wheel_vel = left_vel_in * motor_cmd_per_rad_sec;
+    right_wheel_vel = right_vel_in * motor_cmd_per_rad_sec;
   }
 
   /// \brief Reset the simulation
