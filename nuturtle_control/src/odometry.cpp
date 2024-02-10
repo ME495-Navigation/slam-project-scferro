@@ -2,10 +2,24 @@
 /// \brief Tracks changes in the robot position based on wheel encoder data
 ///
 /// PARAMETERS:
+///     body_id (string): the name of the robot body frame
+///     odom_id (string): the name of the odometry frame
+///     wheel_left (string): the name of the robot left wheel frame
+///     wheel_right (string): the name of the robot right wheel frame
+///     wheel_radius (double): radius of the wheels (m)
+///     track_width (double): track width of the wheels (m)
+///     motor_cmd_max (int): max mcu command for the motor 
+///     motor_cmd_per_rad_sec (double): the angular wheel speed per mcu (radians)
+///     encoder_ticks_per_rad (double): the number of encoder ticks per radian 
+///     collision_radius (double): the collision radius of the robot (m)
+/// SUBSCRIBES:
+///     joint_states (sensor_msgs::msg::JointState): the robot wheel joint states
 /// PUBLISHES:
+///     odom (nav_msgs::msg::Odometry): odometry messages for the robot based on the wheel joint states
 /// SERVERS:
-/// CLIENTS:
+///     initial_pose (nuturtle_control::srv::Pose): resets the odometry to a specified initial state
 /// BROADCASTS:
+///    odom_id -> body_id
 
 #include <chrono>
 #include <memory>

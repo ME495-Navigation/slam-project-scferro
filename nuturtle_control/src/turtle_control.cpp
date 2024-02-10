@@ -2,10 +2,18 @@
 /// \brief Controls the turtlebot
 ///
 /// PARAMETERS:
+///     wheel_radius (double): radius of the wheels (m)
+///     track_width (double): track width of the wheels (m)
+///     motor_cmd_max (int): max mcu command for the motor 
+///     motor_cmd_per_rad_sec (double): the angular wheel speed per mcu (radians)
+///     encoder_ticks_per_rad (double): the number of encoder ticks per radian 
+///     collision_radius (double): the collision radius of the robot (m)
+/// SUBSCRIBES:
+///     cmd_vel (geometry_msgs::msg::Twist): the robot velocity commands
+///     sensor_data (nuturtlebot_msgs::msg::SensorData): the wheel speeds from the encoders
 /// PUBLISHES:
-/// SERVERS:
-/// CLIENTS:
-/// BROADCASTS:
+///     wheel_cmd (nuturtlebot_msgs::msg::WheelCommands): the mcu commands sent to the wheel motors
+///     joint_states (sensor_msgs::msg::JointState): the current joint states of the wheel joints
 
 #include <chrono>
 #include <memory>
@@ -138,8 +146,8 @@ private:
     wheel_cmd_right = target_wheel_speeds[1] / motor_cmd_per_rad_sec;
 
     // Enter wheel commands into message
-    wheel_commands.left_velocity = -limit_cmd(wheel_cmd_left);
-    wheel_commands.right_velocity = -limit_cmd(wheel_cmd_right);
+    wheel_commands.left_velocity = limit_cmd(wheel_cmd_left);
+    wheel_commands.right_velocity = limit_cmd(wheel_cmd_right);
 
     // Update wheel_speed_error_prev
     wheel_speed_error_left_prev = wheel_speed_error_left;

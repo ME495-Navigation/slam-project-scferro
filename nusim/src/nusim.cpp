@@ -12,11 +12,12 @@
 ///     arena_x_length: X length of rectangular arena (m)
 ///     arena_y_length: Y length of rectangular arena (m)
 /// SUBSCRIBES:
-///     ~/red/wheel_cmd (int): the commands for the wheel motors
+///     ~/red/wheel_cmd (nuturtlebot_msgs::msg::WheelCommands): the commands for the wheel motors
 /// PUBLISHES:
 ///     ~/timestep (std_msgs::msg::Uint64): current timestep of simulation
 ///     ~/obstacles (visualization_msgs::msg::MarkerArray): marker objects representing cylinders
 ///     ~/walls (visualization_msgs::msg::MarkerArray): marker objects representing walls of arena
+///     red/sensor_data (nuturtlebot_msgs::msg::SensorData): encoder data for the simulated robot
 /// SERVERS:
 ///     ~/reset (std_srvs::srv::Empty): resets the simulation to the initial state
 ///     ~/teleport (nusim::srv::Teleport): teleports the turtle to a specified x, y, theta value

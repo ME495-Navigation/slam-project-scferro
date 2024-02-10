@@ -2,10 +2,15 @@
 /// \brief Commands the turtlebot to drive in a circle
 ///
 /// PARAMETERS:
+///     angular_velocity (double): the angular velocity of the robot (m)
+///     radius (double): the turning radius for the robot (m)
+///     frequency (int): the publishing frequency (Hz)
 /// PUBLISHES:
+///     cmd_vel (geometry_msgs::msg::Twist): velocity commands for the robot
 /// SERVERS:
-/// CLIENTS:
-/// BROADCASTS:
+///     reverse (std_srvs::srv::Empty): reverses the robot along the circular path
+///     stop (std_srvs::srv::Empty): stops the robot
+///     control (nuturtle_control::srv::Control): starts the robot with a specified angular speed and turning radius
 
 #include <chrono>
 #include <memory>
