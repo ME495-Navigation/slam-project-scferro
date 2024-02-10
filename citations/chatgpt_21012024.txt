@@ -1,0 +1,329 @@
+help me debug this colcon test error
+
+scferro@thunkpad:~/Documents/me495_slam/ws$ colcon test-result --all --verbose
+build/nusim/Testing/20240122-1901/Test.xml: 4 tests, 0 errors, 1 failure, 0 skipped
+- uncrustify
+  <<< failure message
+    -- run_test.py: invoking following command in '/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nusim':
+     - /opt/ros/iron/bin/ament_uncrustify --xunit-file /home/scferro/Documents/me495_slam/ws/build/nusim/test_results/nusim/uncrustify.xunit.xml
+    Code style divergence in file 'src/nusim.cpp':
+    
+
+ChatGPT
+It looks like there's a failure in a code style check (uncrustify) for the file src/nusim.cpp. The error message indicates a "Code style divergence" in that file. Here are some steps you can take to debug and resolve the issue:
+
+Check the uncrustify configuration:
+Make sure that the uncrustify configuration file used for your project is correct and aligns with the expected coding style. Verify that it covers the rules and settings for C++ files, especially src/nusim.cpp.
+
+Review the style issues:
+Open the src/nusim.cpp file and carefully review the style issues mentioned in the error message. It might specify what kind of divergence or issue is present. Common issues include indentation, spacing, or other formatting discrepancies.
+
+Manually correct the style issues:
+Correct the style issues in the src/nusim.cpp file based on the code style conventions used in your project. Ensure that the corrected file adheres to the coding standards specified in your project.
+
+Re-run the test:
+After manually fixing the style issues, re-run the test to see if the uncrustify check passes. Use the same command you initially used for testing:
+
+bash
+Copy code
+colcon test-result --all --verbose
+Check the test results:
+Examine the test results to ensure that the uncrustify test for src/nusim.cpp now passes. If there are still failures, the error messages might provide additional information on the remaining issues.
+
+Consider local uncrustify execution:
+If the issue persists, you can try running uncrustify locally on the problematic file to see if it provides more details about the style discrepancies. Adjustments can then be made based on the local execution results.
+
+By following these steps, you should be able to identify and address the code style issues detected by uncrustify. Remember to keep the coding style consistent across your project to maintain readability and adherence to standards.
+
+User
+scferro@thunkpad:~/Documents/me495_slam/ws$ colcon test-result --all --verbose
+build/nusim/Testing/20240122-1906/Test.xml: 4 tests, 0 errors, 1 failure, 0 skipped
+- uncrustify
+  <<< failure message
+    -- run_test.py: invoking following command in '/home/scferro/Documents/me495_slam/ws/src/slam-project-scferro/nusim':
+     - /opt/ros/iron/bin/ament_uncrustify --xunit-file /home/scferro/Documents/me495_slam/ws/build/nusim/test_results/nusim/uncrustify.xunit.xml
+    Code style divergence in file 'src/nusim.cpp':
+    
+    --- src/nusim.cpp
+    +++ src/nusim.cpp.uncrustify
+    @@ -47,2 +47,3 @@
+    -    Nusim() : Node("nusim"), timestep(0)
+    -    {
+    +  Nusim()
+    +  : Node("nusim"), timestep(0)
+    +  {
+    @@ -81 +82,2 @@
+    -        "~/reset", std::bind(&Nusim::reset_callback, this, std::placeholders::_1, std::placeholders::_2));
+    +      "~/reset",
+    +      std::bind(&Nusim::reset_callback, this, std::placeholders::_1, std::placeholders::_2));
+    @@ -83,2 +85,3 @@
+    -        "~/teleport", std::bind(&Nusim::teleport_callback, this, std::placeholders::_1, std::placeholders::_2));
+    -    
+    +      "~/teleport",
+    +      std::bind(&Nusim::teleport_callback, this, std::placeholders::_1, std::placeholders::_2));
+    +
+    @@ -87,3 +90,3 @@
+    -        std::chrono::milliseconds(1000/rate),
+    -        std::bind(&Nusim::timerCallback, this));
+    -    }
+    +      std::chrono::milliseconds(1000 / rate),
+    +      std::bind(&Nusim::timerCallback, this));
+    +  }
+    @@ -92,25 +95,25 @@
+    -    // Initialize parameter variables
+    -    int rate;
+    -    int timestep = 0;
+    -    double x0;
+    -    double y0;
+    -    double theta0;
+    -    double arena_x_length;
+    -    double arena_y_length;
+    -    std::vector<double> obstacles_x;
+    -    std::vector<double> obstacles_y;
+    -    double obstacles_radius;
+    -    double x_gt, y_gt, theta_gt;
+    -
+    -    // Create ROS publishers, timers, broadcasters, etc. 
+    -    rclcpp::TimerBase::SharedPtr timer;
+    -    rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_publisher;
+    -    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstacle_publisher;
+    -    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr walls_publisher;
+    -    rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_server;
+    -    rclcpp::Service<nusim::srv::Teleport>::SharedPtr teleport_server;
+    -    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
+    -
+    -    /// \brief The main timer callback function, publishes the current timestep, broadcasts groundtruth transform
+    -    void timerCallback()
+    -    {        
+    +  // Initialize parameter variables
+    +  int rate;
+    +  int timestep = 0;
+    +  double x0;
+    +  double y0;
+    +  double theta0;
+    +  double arena_x_length;
+    +  double arena_y_length;
+    +  std::vector<double> obstacles_x;
+    +  std::vector<double> obstacles_y;
+    +  double obstacles_radius;
+    +  double x_gt, y_gt, theta_gt;
+    +
+    +  // Create ROS publishers, timers, broadcasters, etc.
+    +  rclcpp::TimerBase::SharedPtr timer;
+    +  rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_publisher;
+    +  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstacle_publisher;
+    +  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr walls_publisher;
+    +  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_server;
+    +  rclcpp::Service<nusim::srv::Teleport>::SharedPtr teleport_server;
+    +  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
+    +
+    +  /// \brief The main timer callback function, publishes the current timestep, broadcasts groundtruth transform
+    +  void timerCallback()
+    +  {
+    @@ -148,7 +151,7 @@
+    -    }
+    -
+    -    /// \brief Reset the simulation
+    -    void reset_callback(
+    -        std_srvs::srv::Empty::Request::SharedPtr,
+    -        std_srvs::srv::Empty::Response::SharedPtr)
+    -    {
+    +  }
+    +
+    +  /// \brief Reset the simulation
+    +  void reset_callback(
+    +    std_srvs::srv::Empty::Request::SharedPtr,
+    +    std_srvs::srv::Empty::Response::SharedPtr)
+    +  {
+    @@ -162,8 +165,8 @@
+    -    }
+    -
+    -    /// \brief Teleport the turtlebot to the specified position
+    -    /// \param request The desired x,y position and theta orientation of the robot
+    -    void teleport_callback(
+    -        nusim::srv::Teleport::Request::SharedPtr request,
+    -        nusim::srv::Teleport::Response::SharedPtr)
+    -    {
+    +  }
+    +
+    +  /// \brief Teleport the turtlebot to the specified position
+    +  /// \param request The desired x,y position and theta orientation of the robot
+    +  void teleport_callback(
+    +    nusim::srv::Teleport::Request::SharedPtr request,
+    +    nusim::srv::Teleport::Response::SharedPtr)
+    +  {
+    @@ -173,5 +176,5 @@
+    -    }
+    -
+    -    /// @brief Publish wall marker locations
+    -    void publish_walls()
+    -    {
+    +  }
+    +
+    +  /// @brief Publish wall marker locations
+    +  void publish_walls()
+    +  {
+    @@ -188,21 +191,21 @@
+    -        walls.markers.at(i).header.stamp = get_clock()->now();
+    -        walls.markers.at(i).header.frame_id = "nusim/world";
+    -        walls.markers.at(i).id = i;
+    -        walls.markers.at(i).type = 1;
+    -        walls.markers.at(i).action = 0;
+    -
+    -        // Set color
+    -        walls.markers.at(i).color.r = 1.0;
+    -        walls.markers.at(i).color.g = 0.0;
+    -        walls.markers.at(i).color.b = 0.0;
+    -        walls.markers.at(i).color.a = 1.0;
+    -
+    -        // Set height to 0.25
+    -        walls.markers.at(i).scale.x = 0.0;
+    -        walls.markers.at(i).scale.y = 0.0;
+    -        walls.markers.at(i).scale.z = 0.25;
+    -
+    -        // Set height of marker midpoint to 0.25/2
+    -        walls.markers.at(i).pose.position.x = 0.0;
+    -        walls.markers.at(i).pose.position.y = 0.0;
+    -        walls.markers.at(i).pose.position.z = 0.125;
+    +      walls.markers.at(i).header.stamp = get_clock()->now();
+    +      walls.markers.at(i).header.frame_id = "nusim/world";
+    +      walls.markers.at(i).id = i;
+    +      walls.markers.at(i).type = 1;
+    +      walls.markers.at(i).action = 0;
+    +
+    +      // Set color
+    +      walls.markers.at(i).color.r = 1.0;
+    +      walls.markers.at(i).color.g = 0.0;
+    +      walls.markers.at(i).color.b = 0.0;
+    +      walls.markers.at(i).color.a = 1.0;
+    +
+    +      // Set height to 0.25
+    +      walls.markers.at(i).scale.x = 0.0;
+    +      walls.markers.at(i).scale.y = 0.0;
+    +      walls.markers.at(i).scale.z = 0.25;
+    +
+    +      // Set height of marker midpoint to 0.25/2
+    +      walls.markers.at(i).pose.position.x = 0.0;
+    +      walls.markers.at(i).pose.position.y = 0.0;
+    +      walls.markers.at(i).pose.position.z = 0.125;
+    @@ -231,5 +234,5 @@
+    -    }
+    -
+    -    /// @brief Publish obstacle marker locations
+    -    void publish_obstacles()
+    -    {
+    +  }
+    +
+    +  /// @brief Publish obstacle marker locations
+    +  void publish_obstacles()
+    +  {
+    @@ -240,26 +243,26 @@
+    -        // Create obstacle marker
+    -        visualization_msgs::msg::Marker obstacle;
+    -        obstacle.header.stamp = get_clock()->now();
+    -        obstacle.header.frame_id = "nusim/world";
+    -        obstacle.id = i;
+    -        obstacle.type = 3;  // cylinder
+    -        obstacle.action = 0;
+    -
+    -        // Set color 
+    -        obstacle.color.r = 1.0;
+    -        obstacle.color.g = 0.0;
+    -        obstacle.color.b = 0.0;
+    -        obstacle.color.a = 1.0;
+    -
+    -        // Set radius and height
+    -        obstacle.scale.x = 2 * obstacles_radius;
+    -        obstacle.scale.y = 2 * obstacles_radius;
+    -        obstacle.scale.z = 0.25;
+    -
+    -        // Set obstacle location
+    -        obstacle.pose.position.x = obstacles_x.at(i);
+    -        obstacle.pose.position.y = obstacles_y.at(i);
+    -        obstacle.pose.position.z = 0.125;
+    -
+    -        // Add to marker array
+    -        obstacles.markers.push_back(obstacle);
+    +      // Create obstacle marker
+    +      visualization_msgs::msg::Marker obstacle;
+    +      obstacle.header.stamp = get_clock()->now();
+    +      obstacle.header.frame_id = "nusim/world";
+    +      obstacle.id = i;
+    +      obstacle.type = 3;    // cylinder
+    +      obstacle.action = 0;
+    +
+    +      // Set color
+    +      obstacle.color.r = 1.0;
+    +      obstacle.color.g = 0.0;
+    +      obstacle.color.b = 0.0;
+    +      obstacle.color.a = 1.0;
+    +
+    +      // Set radius and height
+    +      obstacle.scale.x = 2 * obstacles_radius;
+    +      obstacle.scale.y = 2 * obstacles_radius;
+    +      obstacle.scale.z = 0.25;
+    +
+    +      // Set obstacle location
+    +      obstacle.pose.position.x = obstacles_x.at(i);
+    +      obstacle.pose.position.y = obstacles_y.at(i);
+    +      obstacle.pose.position.z = 0.125;
+    +
+    +      // Add to marker array
+    +      obstacles.markers.push_back(obstacle);
+    @@ -269 +272 @@
+    -    }
+    +  }
+    @@ -272 +275 @@
+    -int main(int argc, char **argv)
+    +int main(int argc, char ** argv)
+    @@ -274,6 +277,6 @@
+    -rclcpp::init(argc, argv);
+    -auto node = std::make_shared<Nusim>();
+    -rclcpp::spin(node);
+    -rclcpp::shutdown();
+    -return 0;
+    -}
+    +  rclcpp::init(argc, argv);
+    +  auto node = std::make_shared<Nusim>();
+    +  rclcpp::spin(node);
+    +  rclcpp::shutdown();
+    +  return 0;
+    +}
+    
+    1 files with code style divergence
+    -- run_test.py: return code 1
+    -- run_test.py: verify result file '/home/scferro/Documents/me495_slam/ws/build/nusim/test_results/nusim/uncrustify.xunit.xml'
+  >>>
+build/nusim/test_results/nusim/cppcheck.xunit.xml: 1 test, 0 errors, 0 failures, 1 skipped
+build/nusim/test_results/nusim/lint_cmake.xunit.xml: 1 test, 0 errors, 0 failures, 0 skipped
+build/nusim/test_results/nusim/uncrustify.xunit.xml: 1 test, 0 errors, 1 failure, 0 skipped
+- nusim.uncrustify src/nusim.cpp
+  <<< failure message
+    Diff with 245 lines
+  >>>
+ChatGPT
+The error indicates a code style divergence in the src/nusim.cpp file, and it provides a side-by-side diff between the original file and the uncrustified version. Based on the provided information, it seems that the uncrustify tool is detecting differences in formatting between the original and reformatted versions.
+
+In the provided diff, it appears that the code is correctly formatted according to the uncrustify rules. The changes mainly involve spacing adjustments, which align with common C++ coding standards.
+
+To resolve this issue:
+
+Accept the Changes:
+If you agree with the formatting changes made by uncrustify, you can accept them. This may involve updating your version of the code to match the formatted version generated by uncrustify.
+
+Re-run the Test:
+After accepting the changes, re-run the tests using colcon:
+
+bash
+Copy code
+colcon test-result --all --verbose
+Review Uncrustify Configuration:
+Ensure that the uncrustify configuration used for your project is appropriate and aligns with your coding style preferences.
+
+Manual Inspection:
+Manually inspect the changes made by uncrustify to make sure they align with your team's coding standards and preferences.
+
+Investigate Local Formatting:
+You can run uncrustify locally on the src/nusim.cpp file and compare the results. This might provide more insights into the differences.
+
+If the issue persists, you may want to check if there are specific rules or configurations in the uncrustify tool that are causing unexpected formatting changes. Additionally, ensure that your team is aligned on the coding style conventions to prevent such issues in the future.

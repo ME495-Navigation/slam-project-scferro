@@ -28,6 +28,7 @@
 
 // Used ChatGPT for debugging
 // Refer to Citation [5] ChatGPT
+// Refer to Citation [6] ChatGPT
 
 #include <chrono>
 #include <memory>

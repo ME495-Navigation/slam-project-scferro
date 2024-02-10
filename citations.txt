@@ -6,3 +6,5 @@ Citations:
 [3] ChatGPT, Feb. 8 2024 - see chatgpt_08022024.txt
 [4] ChatGPT, Feb. 9 2024 - see chatgpt_09022024_1.txt
 [5] ChatGPT, Feb. 9 2024 - see chatgpt_08022024_2.txt
+[6] ChatGPT, Jan. 21 2024 - see chatgpt_21012024_1.txt
+[7] ChatGPT, Jan. 22 2024 - see chatgpt_22012024_2.txt

@@ -3,6 +3,8 @@
 #include <iostream>
 #include "turtlelib/geometry2d.hpp"
 
+// Used ChatGPT for debugging
+// Refer to Citation [7] ChatGPT
 
 namespace turtlelib {
 

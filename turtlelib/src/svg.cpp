@@ -7,6 +7,9 @@
 #include "turtlelib/geometry2d.hpp"
 #include "turtlelib/svg.hpp"
 
+// Used ChatGPT for debugging
+// Refer to Citation [7] ChatGPT
+
 namespace turtlelib {
 
     /// \brief add a point to the svg
