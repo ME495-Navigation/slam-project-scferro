@@ -181,7 +181,6 @@ private:
 
     // Add headers to JointStates
     wheel_state.header.stamp = get_clock()->now();
-    wheel_state.header.frame_id = {"wheel_left_joint", "wheel_right_joint"};
 
     // Enter information into joint state messages
     wheel_state.name = {"wheel_left_joint", "wheel_right_joint"};

@@ -94,7 +94,7 @@ private:
   {
     // Set state to STOPPED
     state = 0;
-    RCLCPP_INFO(this->get_logger(), "Robot stopped.");
+    RCLCPP_INFO(this->get_logger(), "Stopping!.");
 
     // Publish one cmd_vel command with 0 velocity
     geometry_msgs::msg::Twist vel_command;
@@ -109,8 +109,10 @@ private:
     std_srvs::srv::Empty::Request::SharedPtr,
     std_srvs::srv::Empty::Response::SharedPtr)
   {
+    RCLCPP_INFO(this->get_logger(), "Reversing!");
     // Change the direction of the robot
     linear_velocity = -linear_velocity;
+    angular_velocity = -angular_velocity;
   }
 
   /// \brief Set the radius and angular velocity of the robot

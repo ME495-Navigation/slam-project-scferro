@@ -129,12 +129,13 @@ private:
     turtlelib::Twist2D body_twist;
     turtlelib::Vector2D position;
     tf2::Quaternion quaternion;
+    std::vector<double> state;
 
     body_twist = diff_drive.get_twist(left_wheel_angle, right_wheel_angle);
     body_tf = diff_drive.update_state(left_wheel_angle, right_wheel_angle);
     position = body_tf.translation();
     quaternion.setRPY(0, 0, body_tf.rotation());
-
+    
     // Create odom message
     nav_msgs::msg::Odometry odom_msg;
     odom_msg.header.stamp = get_clock()->now();
@@ -156,17 +157,20 @@ private:
 
     // Publish odom_msg
     odom_pub->publish(odom_msg);
+    
+    // Get state
+    state = diff_drive.return_state();
 
     // Publish transform from odom to base_link (same position)
     geometry_msgs::msg::TransformStamped tf;
     tf.header.stamp = get_clock()->now();
     tf.header.frame_id = odom_id;
     tf.child_frame_id = body_id;
-    tf.transform.translation.x = 0.0;
-    tf.transform.translation.y = 0.0;
+    tf.transform.translation.x = state[0];
+    tf.transform.translation.y = state[1];
     tf.transform.translation.z = 0.0;
 
-    quaternion.setRPY(0, 0, 0);
+    quaternion.setRPY(0, 0, state[2]);
     tf.transform.rotation.x = quaternion.x();
     tf.transform.rotation.y = quaternion.y();
     tf.transform.rotation.z = quaternion.z();

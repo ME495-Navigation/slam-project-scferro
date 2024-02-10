@@ -41,6 +41,7 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "nuturtlebot_msgs/msg/wheel_commands.hpp"
+#include "nuturtlebot_msgs/msg/sensor_data.hpp"
 #include "turtlelib/diff_drive.hpp"
 
 using namespace std::chrono_literals;
@@ -62,11 +63,12 @@ public:
     declare_parameter("obstacles_y", std::vector<double>{});
     declare_parameter("obstacles_radius", 0.038);
     declare_parameter("motor_cmd_per_rad_sec", 0.024);
+    declare_parameter("encoder_ticks_per_rad", 651.8986469);
     declare_parameter("wheel_radius", 0.066);
     declare_parameter("track_width", 0.160);
 
     // Define parameter variables
-    rate = get_parameter("rate").as_int();
+    loop_rate = get_parameter("rate").as_int();
     x0 = get_parameter("x0").as_double();
     y0 = get_parameter("y0").as_double();
     theta0 = get_parameter("theta0").as_double();
@@ -76,6 +78,7 @@ public:
     obstacles_y = get_parameter("obstacles_y").as_double_array();
     obstacles_radius = get_parameter("obstacles_radius").as_double();
     motor_cmd_per_rad_sec = get_parameter("motor_cmd_per_rad_sec").as_double();
+    encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_double();
     wheel_radius = get_parameter("wheel_radius").as_double();
     track_width = get_parameter("track_width").as_double();
 
@@ -88,6 +91,7 @@ public:
     timestep_publisher = create_publisher<std_msgs::msg::UInt64>("~/timestep", 10);
     obstacle_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/obstacles", 10);
     walls_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", 10);
+    sensor_data_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>("red/sensor_data", 10);
 
     // Subscribers
     wheel_cmd_sub = create_subscription<nuturtlebot_msgs::msg::WheelCommands>(
@@ -106,7 +110,7 @@ public:
       std::bind(&Nusim::teleport_callback, this, std::placeholders::_1, std::placeholders::_2));
 
     // Main timer
-    int cycle_time = 1000.0 / rate;
+    int cycle_time = 1000.0 / loop_rate;
     main_timer = this->create_wall_timer(
       std::chrono::milliseconds(cycle_time),
       std::bind(&Nusim::timer_callback, this));
@@ -116,11 +120,8 @@ private:
   // Initialize parameter variables
   int rate;
   int timestep = 0;
-  double x0;
-  double y0;
-  double theta0;
-  double arena_x_length;
-  double arena_y_length;
+  double x0, y0, theta0;
+  double arena_x_length, arena_y_length;
   double wheel_radius, track_width;
   double right_wheel_vel, left_wheel_vel, motor_cmd_per_rad_sec;
   turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
@@ -128,12 +129,15 @@ private:
   std::vector<double> obstacles_y;
   double obstacles_radius;
   double x_gt, y_gt, theta_gt;
+  int encoder_ticks_per_rad;
+  int loop_rate;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr main_timer;
   rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_publisher;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstacle_publisher;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr walls_publisher;
+  rclcpp::Publisher<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_data_pub;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_server;
   rclcpp::Service<nusim::srv::Teleport>::SharedPtr teleport_server;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
@@ -143,7 +147,7 @@ private:
   void timer_callback()
   {
     geometry_msgs::msg::TransformStamped tf_base;
-    tf2::Quaternion quat_robot, quat_left, quat_right;
+    tf2::Quaternion quat_robot;
     auto message = std_msgs::msg::UInt64();
     double delta_left_wheel, delta_right_wheel, left_wheel_angle, right_wheel_angle;
     std::vector<double> wheel_angles, state;
@@ -156,8 +160,8 @@ private:
     timestep_publisher->publish(message);
 
     // Calculate wheel position change
-    delta_left_wheel = left_wheel_vel / rate;
-    delta_right_wheel = right_wheel_vel / rate;
+    delta_left_wheel = left_wheel_vel / loop_rate;
+    delta_right_wheel = right_wheel_vel / loop_rate;
 
     // Find new wheel positions
     wheel_angles = diff_drive.return_wheels();
@@ -194,6 +198,9 @@ private:
 
     // Publish obstacles
     publish_obstacles();
+
+    // Publish sensor data
+    publish_sensor_data(left_wheel_angle, right_wheel_angle);
 
     // Increase timestep
     timestep++;
@@ -233,6 +240,28 @@ private:
     x_gt = request->x;
     y_gt = request->y;
     theta_gt = request->theta;
+  }
+
+  /// @brief Publish encoder ticks
+  void publish_sensor_data(double left_wheel_angle, double right_wheel_angle)
+  {
+    int left_encoder, right_encoder;
+    double left_encoder_double, right_encoder_double;
+    nuturtlebot_msgs::msg::SensorData sensor_data;
+
+    // Calculate encoder counts at current state
+    left_encoder_double = encoder_ticks_per_rad * left_wheel_angle;
+    right_encoder_double = encoder_ticks_per_rad * right_wheel_angle; 
+    left_encoder = static_cast<int>(left_encoder_double);
+    right_encoder = static_cast<int>(right_encoder_double);
+
+    // Define sensor data message
+    sensor_data.stamp = get_clock()->now();
+    sensor_data.left_encoder = left_encoder;
+    sensor_data.right_encoder = right_encoder;
+
+    // Publish sensor_data
+    sensor_data_pub->publish(sensor_data);
   }
 
   /// @brief Publish wall marker locations
