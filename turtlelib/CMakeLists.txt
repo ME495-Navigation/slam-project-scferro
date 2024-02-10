@@ -16,24 +16,27 @@ target_compile_options(turtlelib PUBLIC -Wall -Wextra -pedantic)
 # Enable c++17 support.
 target_compile_features(turtlelib PUBLIC cxx_std_17)
 
+# Cmake option for build testing off
+option(BUILD_TESTING "Build the unit tests" ON)
+
 # Catch2 unit testing framework
-find_package(Catch2 3 REQUIRED)
-include(CTest)
-enable_testing()
-add_executable(geometry2d_test tests/test_geometry2d.cpp)
-add_executable(se2d_test tests/test_se2d.cpp)
-add_executable(svg_test tests/test_svg.cpp)
-add_executable(diff_drive_test tests/test_diff_drive.cpp)
-target_link_libraries(geometry2d_test turtlelib Catch2::Catch2WithMain)
-target_link_libraries(se2d_test turtlelib Catch2::Catch2WithMain)
-target_link_libraries(svg_test turtlelib Catch2::Catch2WithMain)
-target_link_libraries(diff_drive_test turtlelib Catch2::Catch2WithMain)
-
-
-add_test(NAME Test_Geometry2D COMMAND geometry2d_test)
-add_test(NAME Test_SE2D COMMAND se2d_test)
-add_test(NAME Test_Svg COMMAND svg_test)
-add_test(NAME Test_DiffDrive COMMAND diff_drive_test)
+if(BUILD_TESTING)
+  find_package(Catch2 3 REQUIRED)
+  include(CTest)
+  enable_testing()
+  add_executable(geometry2d_test tests/test_geometry2d.cpp)
+  add_executable(se2d_test tests/test_se2d.cpp)
+  add_executable(svg_test tests/test_svg.cpp)
+  add_executable(diff_drive_test tests/test_diff_drive.cpp)
+  target_link_libraries(geometry2d_test turtlelib Catch2::Catch2WithMain)
+  target_link_libraries(se2d_test turtlelib Catch2::Catch2WithMain)
+  target_link_libraries(svg_test turtlelib Catch2::Catch2WithMain)
+  target_link_libraries(diff_drive_test turtlelib Catch2::Catch2WithMain)
+  add_test(NAME Test_Geometry2D COMMAND geometry2d_test)
+  add_test(NAME Test_SE2D COMMAND se2d_test)
+  add_test(NAME Test_Svg COMMAND svg_test)
+  add_test(NAME Test_DiffDrive COMMAND diff_drive_test)
+endif()
 
 # install the include files by copying the whole include directory
 install(DIRECTORY include/turtlelib DESTINATION include)
