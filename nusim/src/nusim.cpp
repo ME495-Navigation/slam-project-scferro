@@ -182,7 +182,7 @@ private:
     theta_gt = state[2];
 
     // Create base link gt transforms
-    // Refer to Citation [3] ChatGPT 
+    // Refer to Citation [3] ChatGPT
     tf_base.header.stamp = get_clock()->now();
     tf_base.header.frame_id = "nusim/world";
     tf_base.child_frame_id = "red/base_footprint";
@@ -257,12 +257,12 @@ private:
 
     // Calculate encoder counts at current state
     left_encoder_double = encoder_ticks_per_rad * left_wheel_angle;
-    right_encoder_double = encoder_ticks_per_rad * right_wheel_angle; 
+    right_encoder_double = encoder_ticks_per_rad * right_wheel_angle;
     left_encoder = static_cast<int>(left_encoder_double);
     right_encoder = static_cast<int>(right_encoder_double);
 
     // Define sensor data message
-    // Refer to Citation [3] ChatGPT 
+    // Refer to Citation [3] ChatGPT
     sensor_data.stamp = get_clock()->now();
     sensor_data.left_encoder = left_encoder;
     sensor_data.right_encoder = right_encoder;

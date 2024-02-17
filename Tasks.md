@@ -36,4 +36,6 @@ Task E.3 - Create circle node: COMPLETE
 Task E.4 - ROS2 API Testing: IN PROGRESS
 Task E.4 - Launchfile: COMPLETE
 
-Task F.1 - Turtlebot Setup: IN PROGRESS
+Task F.1 - Turtlebot Setup: COMPLETE
+Task F.2 - Cross-compile: COMPLETE
+Task F.3 - Physical testing: COMPLETE

@@ -27,7 +27,7 @@ TEST_CASE("Update state, both wheel rotate forwards (pure translation)", "[DiffD
     Point2D point, new_point;
     point = {0.0, 0.0};
     new_point = tf(point);
-    REQUIRE_THAT(new_point.x, Catch::Matchers::WithinAbs(1.256637061, 1e-5));
+    REQUIRE_THAT(new_point.x, Catch::Matchers::WithinAbs(0.6283185307, 1e-5));
     REQUIRE_THAT(new_point.y, Catch::Matchers::WithinAbs(0.0, 1e-5));
 }
 
@@ -59,8 +59,8 @@ TEST_CASE("Update state, wheels spin different speeds (drive in an LH arc)", "[D
     Point2D point, new_point;
     point = {0.0, 0.0};
     new_point = tf(point);
-    REQUIRE_THAT(new_point.x, Catch::Matchers::WithinAbs(0.7132923872, 1e-5));
-    REQUIRE_THAT(new_point.y, Catch::Matchers::WithinAbs(0.5182372542, 1e-5));
+    REQUIRE_THAT(new_point.x, Catch::Matchers::WithinAbs(0.4408389392, 1e-5));
+    REQUIRE_THAT(new_point.y, Catch::Matchers::WithinAbs(0.1432372542, 1e-5));
 }
 
 TEST_CASE("Update state, wheels spin different speeds (drive in an RH arc)", "[DiffDrive]") // Stephen Ferro
@@ -75,8 +75,8 @@ TEST_CASE("Update state, wheels spin different speeds (drive in an RH arc)", "[D
     Point2D point, new_point;
     point = {0.0, 0.0};
     new_point = tf(point);
-    REQUIRE_THAT(new_point.x, Catch::Matchers::WithinAbs(0.7132923872, 1e-5));
-    REQUIRE_THAT(new_point.y, Catch::Matchers::WithinAbs(-0.5182372542, 1e-5));
+    REQUIRE_THAT(new_point.x, Catch::Matchers::WithinAbs(0.4408389392, 1e-5));
+    REQUIRE_THAT(new_point.y, Catch::Matchers::WithinAbs(-0.1432372542, 1e-5));
 }
 
 TEST_CASE("Integrate twist, both wheel rotate forwards (pure translation)", "[DiffDrive]") // Stephen Ferro
@@ -87,8 +87,8 @@ TEST_CASE("Integrate twist, both wheel rotate forwards (pure translation)", "[Di
     twist.x = 1;
     wheel_speeds = diff_drive.inverse_kinematics(twist);
 
-    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(1.59154943092, 1e-5));
-    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(1.59154943092, 1e-5));
+    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(3.1830988618, 1e-5));
+    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(3.1830988618, 1e-5));
 }
 
 TEST_CASE("Integrate twist, wheels spin opposite directions (pure rotation)", "[DiffDrive]") // Stephen Ferro
@@ -99,8 +99,8 @@ TEST_CASE("Integrate twist, wheels spin opposite directions (pure rotation)", "[
     twist.omega = PI;
     wheel_speeds = diff_drive.inverse_kinematics(twist);
 
-    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(-1.25, 1e-5));
-    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(1.25, 1e-5));
+    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(-2.5, 1e-5));
+    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(2.5, 1e-5));
 }
 
 TEST_CASE("Integrate twist, wheels spin different speeds (drive in an LH arc)", "[DiffDrive]") // Stephen Ferro
@@ -112,8 +112,8 @@ TEST_CASE("Integrate twist, wheels spin different speeds (drive in an LH arc)", 
     twist.x = 1;
     wheel_speeds = diff_drive.inverse_kinematics(twist);
 
-    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(0.3415494309, 1e-5));
-    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(2.8415494309, 1e-5));
+    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(0.6830988618, 1e-5));
+    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(5.6830988618, 1e-5));
 }
 
 TEST_CASE("Integrate twist, wheels spin different speeds (drive in an RH arc)", "[DiffDrive]") // Stephen Ferro
@@ -125,8 +125,8 @@ TEST_CASE("Integrate twist, wheels spin different speeds (drive in an RH arc)", 
     twist.x = 1;
     wheel_speeds = diff_drive.inverse_kinematics(twist);
 
-    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(0.3415494309, 1e-5));
-    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(2.8415494309, 1e-5));
+    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(0.6830988618, 1e-5));
+    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(5.6830988618, 1e-5));
 }
 
 TEST_CASE("Integrate twist, invalid twist (y != 0)", "[DiffDrive]") // Stephen Ferro

@@ -23,6 +23,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(turtlelib REQUIRED)
 find_package(nuturtlebot_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(catch_ros2 REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}_srv
   "srv/Control.srv"
@@ -32,17 +33,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}_srv
 
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME}_srv "rosidl_typesupport_cpp")
 
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
-  set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
-endif()
 
 add_executable(turtle_control  src/turtle_control.cpp)
 ament_target_dependencies(turtle_control rclcpp std_msgs geometry_msgs
@@ -59,18 +49,31 @@ ament_target_dependencies(circle rclcpp std_msgs geometry_msgs sensor_msgs
   std_srvs nav_msgs tf2 tf2_ros visualization_msgs nuturtlebot_msgs)
 target_link_libraries(circle turtlelib::turtlelib "${cpp_typesupport_target}")
 
+add_executable(turtle_control_test test/turtle_control_test.cpp)
+target_link_libraries(turtle_control_test catch_ros2::catch_ros2_with_node_main)
+ament_target_dependencies(turtle_control_test rclcpp nuturtlebot_msgs geometry_msgs catch_ros2 sensor_msgs)
+
 install(TARGETS
   turtle_control
   odometry
   circle
+  turtle_control_test
   DESTINATION lib/${PROJECT_NAME}
 )
+
+catch_ros2_add_integration_test(turtle_control_test LAUNCH_FILE turtle_control_test.launch.xml)
 
 install(DIRECTORY
   launch
   srv
   config
+  test
   DESTINATION share/${PROJECT_NAME}/
 )
+
+find_package(ament_lint_auto REQUIRED)
+set(ament_cmake_copyright_FOUND TRUE)
+set(ament_cmake_cpplint_FOUND TRUE)
+ament_lint_auto_find_test_dependencies()
 
 ament_package()

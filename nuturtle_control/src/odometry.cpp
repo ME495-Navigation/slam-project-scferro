@@ -8,9 +8,9 @@
 ///     wheel_right (string): the name of the robot right wheel frame
 ///     wheel_radius (double): diameter of the wheels (m)
 ///     track_width (double): track width of the wheels (m)
-///     motor_cmd_max (int): max mcu command for the motor 
+///     motor_cmd_max (int): max mcu command for the motor
 ///     motor_cmd_per_rad_sec (double): the angular wheel speed per mcu (radians)
-///     encoder_ticks_per_rad (double): the number of encoder ticks per radian 
+///     encoder_ticks_per_rad (double): the number of encoder ticks per radian
 ///     collision_radius (double): the collision radius of the robot (m)
 /// SUBSCRIBES:
 ///     joint_states (sensor_msgs::msg::JointState): the robot wheel joint states
@@ -153,10 +153,10 @@ private:
     body_tf = diff_drive.update_state(left_wheel_angle, right_wheel_angle);
     position = body_tf.translation();
     quaternion.setRPY(0, 0, body_tf.rotation());
-    
+
     // Create odom message
     nav_msgs::msg::Odometry odom_msg;
-    // Refer to Citation [3] ChatGPT 
+    // Refer to Citation [3] ChatGPT
     odom_msg.header.stamp = get_clock()->now();
     odom_msg.header.frame_id = odom_id;
     odom_msg.child_frame_id = body_id;
@@ -176,13 +176,13 @@ private:
 
     // Publish odom_msg
     odom_pub->publish(odom_msg);
-    
+
     // Get state
     state = diff_drive.return_state();
 
     // Publish transform from odom to base_link (same position)
     geometry_msgs::msg::TransformStamped tf;
-    // Refer to Citation [3] ChatGPT 
+    // Refer to Citation [3] ChatGPT
     tf.header.stamp = get_clock()->now();
     tf.header.frame_id = odom_id;
     tf.child_frame_id = body_id;

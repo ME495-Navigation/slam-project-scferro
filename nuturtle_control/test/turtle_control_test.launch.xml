@@ -1,0 +1,11 @@
+<launch>
+
+  <let name="params_file" value="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+
+  <node pkg="nuturtle_control" exec="turtle_control">
+        <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+  </node>
+
+  <test pkg="nuturtle_control" exec="turtle_circle_test" output="screen" time-limit="2.0"/>
+
+</launch>

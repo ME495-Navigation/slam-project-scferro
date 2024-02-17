@@ -4,9 +4,9 @@
 /// PARAMETERS:
 ///     wheel_radius (double): radius of the wheels (m)
 ///     track_width (double): track width of the wheels (m)
-///     motor_cmd_max (int): max mcu command for the motor 
+///     motor_cmd_max (int): max mcu command for the motor
 ///     motor_cmd_per_rad_sec (double): the angular wheel speed per mcu (radians)
-///     encoder_ticks_per_rad (double): the number of encoder ticks per radian 
+///     encoder_ticks_per_rad (double): the number of encoder ticks per radian
 ///     collision_radius (double): the collision radius of the robot (m)
 /// SUBSCRIBES:
 ///     cmd_vel (geometry_msgs::msg::Twist): the robot velocity commands
@@ -192,8 +192,7 @@ private:
       (time_now_sensor - time_prev_sensor);
 
     // Add headers to JointStates
-    // Refer to Citation [3] ChatGPT 
-    // Refer to Citation [3] ChatGPT 
+    // Refer to Citation [3] ChatGPT
     wheel_state.header.stamp = get_clock()->now();
 
     // Enter information into joint state messages
