@@ -47,8 +47,11 @@
 
     <!-- Launch numsr_turtlebot node if robot==localhost -->
     <node pkg="numsr_turtlebot" exec="numsr_turtlebot" if="$(eval '\'$(var robot)\' == \'localhost\'')"/>
+
+    <!-- Launch hlds_laser launch file if robot==localhost -->
+    <include pkg="numsr_turtlebot" exec="numsr_turtlebot" if="$(eval '\'$(var robot)\' == \'localhost\'')"/>
     
     <!-- Publish a static TF between the odom and world frames-->
-    <node pkg="tf2_ros" exec="static_transform_publisher" args="0 0 0 0 0 0 1 /nusim/world /odom"/>
+    <node file="$(find-pkg-share hls_lfcd_lds_driver)/launch/hlds_laser.launch.py" if="$(eval '\'$(var robot)\' == \'localhost\'')"/>
 
 </launch>

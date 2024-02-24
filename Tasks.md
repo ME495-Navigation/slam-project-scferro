@@ -39,3 +39,9 @@ Task E.4 - Launchfile: COMPLETE
 Task F.1 - Turtlebot Setup: COMPLETE
 Task F.2 - Cross-compile: COMPLETE
 Task F.3 - Physical testing: COMPLETE
+Task F.4 - Laser Scanner: COMPLETE
+
+Task V.1 - Simulation Standalone config: IN PROGRESS
+Task V.2 - Simulation with Odometry config: IN PROGRESS
+Task V.3 - Real robot with Odometry config: IN PROGRESS
+Task V.4 - Simulated Robot With SLAM config: IN PROGRESS
