@@ -1,0 +1,6 @@
+.vscode should not be in repository
+start_robot.launch includes a launchfile with LaunchConfigurationEquals, which is deprecated.
+
+blue robot has error in rviz (not publishing joint states)
+
+robot moves too slowly (it takes far longer than 10 second for a .1m/s to travel 1 meter

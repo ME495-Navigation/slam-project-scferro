@@ -57,6 +57,7 @@ namespace turtlelib {
         }
     }
 
+    // probably want a more structured type rather than vector of double here
     std::vector<double> DiffDrive::return_state() {
         std::vector<double> state = {x_robot, y_robot, theta_robot};
         return state;
