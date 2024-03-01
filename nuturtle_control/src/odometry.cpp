@@ -34,6 +34,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "turtlelib/geometry2d.hpp"
 #include "turtlelib/se2d.hpp"
 #include "turtlelib/diff_drive.hpp"
@@ -99,6 +100,7 @@ public:
 
     // Publishers
     odom_pub = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+    path_pub = create_publisher<nav_msgs::msg::Path>("blue/path", 10);
 
     // Subscribers
     joint_state_sub = create_subscription<sensor_msgs::msg::JointState>(
@@ -132,12 +134,15 @@ private:
   std::string body_id, odom_id, wheel_left, wheel_right;
   int loop_rate;
   turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(1.0, 1.0);
+  nav_msgs::msg::Path odom_path;
+  geometry_msgs::msg::PoseStamped odom_pose;
 
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_sub;
   rclcpp::Service<nuturtle_control::srv::Pose>::SharedPtr initial_pose_srv;
   rclcpp::TimerBase::SharedPtr main_timer;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
 
   /// \brief The main timer callback, updates diff_drive state and publishes odom messages
   void timer_callback()
@@ -197,6 +202,9 @@ private:
     tf.transform.rotation.w = quaternion.w();
 
     tf_broadcaster->sendTransform(tf);
+    
+    // Add current pose to path and publish path
+    update_path();\
   }
 
   /// \brief The joint_state callback function, updates the stored wheel position
@@ -224,6 +232,38 @@ private:
     right_wheel_angle = 0.0;
     left_wheel_speed = 0.0;
     right_wheel_speed = 0.0;
+  }
+
+  /// \brief Updates the robot path with the current pose and publishes the path
+  void update_path()
+  {
+    std::vector<double> state;
+    
+    // Update ground truth red turtle path
+    odom_path.header.stamp = get_clock()->now();
+    odom_path.header.frame_id = "nusim/world";
+
+    // Get state
+    state = diff_drive.return_state();
+
+    // Create new pose stamped
+    odom_pose.header.stamp = get_clock()->now();
+    odom_pose.header.frame_id = "nusim/world";
+    odom_pose.pose.position.x = state[0];
+    odom_pose.pose.position.y = state[1];
+    odom_pose.pose.position.z = 0.0;
+
+    // Add rotation quaternion about Z
+    tf2::Quaternion quaternion;
+    quaternion.setRPY(0, 0, state[2]);
+    odom_pose.pose.orientation.x = quaternion.x();
+    odom_pose.pose.orientation.y = quaternion.y();
+    odom_pose.pose.orientation.z = quaternion.z();
+    odom_pose.pose.orientation.w = quaternion.w();
+
+    // Add pose to path and publish path
+    odom_path.poses.push_back(odom_pose);
+    path_pub->publish(odom_path);
   }
 };
 

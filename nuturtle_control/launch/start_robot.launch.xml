@@ -9,7 +9,7 @@
 
     <!-- Launch nusim launch file if robot==nusim -->
     <include file="$(find-pkg-share nusim)/launch/nusim.launch.xml" if="$(eval '\'$(var robot)\' == \'nusim\'')">
-        <arg name="use_rviz" value="$(var use_rviz)" />
+        <arg name="use_rviz_sim" value="false" />
     </include>
 
     <!-- Load the blue turtle -->

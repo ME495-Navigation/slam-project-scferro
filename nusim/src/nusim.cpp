@@ -153,7 +153,7 @@ public:
 
     // Timers
     int cycle_time = 1000.0 / loop_rate;
-    int fake_sensor_cycle_time = 1000.0 / loop_rate;
+    int fake_sensor_cycle_time = 1000.0 / fake_sensor_rate;
     main_timer = this->create_wall_timer(
       std::chrono::milliseconds(cycle_time),
       std::bind(&Nusim::timer_callback, this));
@@ -205,7 +205,7 @@ private:
     geometry_msgs::msg::TransformStamped tf_base;
     tf2::Quaternion quat_robot;
     auto message = std_msgs::msg::UInt64();
-    double delta_left_wheel, delta_right_wheel, left_wheel_angle, right_wheel_angle;
+    double delta_left_wheel, delta_right_wheel;
     std::vector<double> wheel_angles, state;
     turtlelib::Transform2D body_tf;
     double left_wheel_angle_slip, right_wheel_angle_slip;
@@ -229,7 +229,7 @@ private:
       delta_right_wheel = 0.0;
     }
 
-    // Find wheel angles, adjusted with slip
+    // Find wheel angles adjusted with slip
     wheel_angles = diff_drive.return_wheels();
     left_wheel_angle_slip = wheel_angles[0] + (delta_left_wheel * (1 + slip_range(get_random())));
     right_wheel_angle_slip = wheel_angles[1] + (delta_right_wheel * (1 + slip_range(get_random())));
@@ -237,7 +237,6 @@ private:
     // Update diff_drive state
     body_tf = diff_drive.update_state(left_wheel_angle_slip, right_wheel_angle_slip);
     state = diff_drive.return_state();
-    wheel_angles = diff_drive.return_wheels();
     x_gt = state[0];
     y_gt = state[1];
     theta_gt = state[2];
