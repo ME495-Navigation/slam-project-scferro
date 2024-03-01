@@ -55,6 +55,7 @@
 #include "turtlelib/diff_drive.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
 
 using namespace std::chrono_literals;
 
@@ -82,9 +83,12 @@ public:
     declare_parameter("pose_rate", 1);
     declare_parameter("input_noise", 1.0);
     declare_parameter("slip_fraction", 0.05);
-    declare_parameter("max_range", 10.);
-    declare_parameter("basic_sensor_variance", 0.5);
+    declare_parameter("max_range", 3.5);
+    declare_parameter("min_range", 0.12);
+    declare_parameter("basic_sensor_variance", 0.05);
     declare_parameter("collision_radius", 0.11);
+    declare_parameter("laser_noise", 1.0);
+    declare_parameter("laser_samples", 360);
 
     // Define parameter variables
     loop_rate = get_parameter("rate").as_int();
@@ -105,8 +109,11 @@ public:
     input_noise = get_parameter("input_noise").as_double();
     slip_fraction = get_parameter("slip_fraction").as_double();
     max_range = get_parameter("max_range").as_double();
+    min_range = get_parameter("min_range").as_double();
     basic_sensor_variance = get_parameter("basic_sensor_variance").as_double();
     collision_radius = get_parameter("collision_radius").as_double();
+    laser_noise = get_parameter("laser_noise").as_double();
+    laser_samples = get_parameter("laser_samples").as_int();
 
     // Create diff_drive, initialize wheel speeds
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
@@ -124,7 +131,8 @@ public:
     walls_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", 10);
     sensor_data_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>("red/sensor_data", 10);
     path_pub = create_publisher<nav_msgs::msg::Path>("red/path", 10);
-    fake_sensor_pub = create_publisher<visualization_msgs::msg::MarkerArray>("fake_sensor", 10);
+    fake_sensor_pub = create_publisher<visualization_msgs::msg::MarkerArray>("red/fake_sensor", 10);
+    laser_pub = create_publisher<sensor_msgs::msg::LaserScan>("scan", 10);
 
     // Subscribers
     wheel_cmd_sub = create_subscription<nuturtlebot_msgs::msg::WheelCommands>(
@@ -165,9 +173,10 @@ private:
   std::vector<double> obstacles_x, obstacles_y;
   double obstacles_radius;
   double x_gt, y_gt, theta_gt;
-  int encoder_ticks_per_rad;
+  int encoder_ticks_per_rad, laser_samples;
   int loop_rate, pose_rate, fake_sensor_rate;
-  double slip_fraction, input_noise, max_range, basic_sensor_variance;
+  double slip_fraction, input_noise, basic_sensor_variance, laser_noise;
+  double max_range, min_range;
   double collision_radius;
   nav_msgs::msg::Path nusim_path;
   geometry_msgs::msg::PoseStamped nusim_pose;
@@ -182,6 +191,7 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr walls_publisher;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr fake_sensor_pub;
   rclcpp::Publisher<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_data_pub;
+  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr laser_pub;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_server;
   rclcpp::Service<nusim::srv::Teleport>::SharedPtr teleport_server;
@@ -273,11 +283,130 @@ private:
   /// @brief Publishes the fake sensor reading
   void fake_sensor_timer_callback()
   {
+    // Update the obstacle positions using the fake sensor
+    fake_sensor();
+
+    // Publish the lidar markers
+    publish_laser();
+  }
+
+  /// @brief Publish a LaserScan msg from the simulated robot lidar
+  void publish_laser()
+  {
+    sensor_msgs::msg::LaserScan laser;
+    laser.header.stamp = this->get_clock()->now();
+    double x_max, y_max, slope, a, b, c;
+    std::string frame_id = "red/base_scan";
+    std::vector<float> ranges;
+    
+    // Basic laser msg data
+    laser.header.frame_id = frame_id;
+    laser.angle_min = 0.0;
+    laser.angle_max = 6.28318530718;
+    laser.angle_increment = 6.28318530718 / laser_samples;
+    laser.time_increment = 0.0;
+    laser.scan_time = 0.20066890120506287;
+    laser.range_min = min_range;
+    laser.range_max = max_range;
+
+    // check ranges and add to array
+    for (int n = 0; n < laser_samples; n++) {
+      double angle = n * 6.28318530718 / laser_samples;
+      double measurement = max_range;
+
+      // Find maximum range coordinates based on laser range
+      x_max = x_gt + max_range * cos(angle + theta_gt);
+      y_max = y_gt + max_range * sin(angle + theta_gt);
+      slope = (y_max - y_gt) / (x_max - x_gt);
+
+      // iterate through obstacles
+      for (u_int i = 0; i < obstacles_x.size(); i++) {
+        // Find intersection of obstacle circumference and laser ray
+        // Set equation for obstacle equal to equation for ray and solve with quadratic formula
+        a = 1 + pow(slope, 2);
+        b = 2 * ((y_gt - obstacles_y.at(i) - (slope * x_gt)) * slope - obstacles_x.at(i));
+        c = obstacles_x.at(i) * obstacles_x.at(i) + pow((y_gt - obstacles_y.at(i) - (slope * x_gt)), 2) - pow(obstacles_radius, 2);
+
+        // Check if there are solutions
+        double disc = b * b - 4 * a * c;
+        if (disc > 0) {
+          // If disc > 0, the ray intersects the obstacle and solutions exist
+          double x1 = (-1.0 * b + sqrt(disc)) / (2 * a);
+          double x2 = (-1.0 * b - sqrt(disc)) / (2 * a);
+          double y1 = slope * (x1 - x_gt) + y_gt;
+          double y2 = slope * (x2 - x_gt) + y_gt;
+          double dist1 = sqrt(pow(x_gt - x1, 2) + pow(y_gt - y1, 2));
+          double dist2 = sqrt(pow(x_gt - x2, 2) + pow(y_gt - y2, 2));
+
+          // Check if intersection point is within valid measurement range
+          bool check1 = ((x1 < x_gt && x1 > x_max) || (x1 > x_gt && x1 < x_max)) && ((y1 < y_gt && y1 > y_max) || (y1 > y_gt && y1 < y_max));
+          bool check2 = ((x2 < x_gt && x2 > x_max) || (x2 > x_gt && x2 < x_max)) && ((y2 < y_gt && y2 > y_max) || (y2 > y_gt && y2 < y_max));
+
+          // Select valid solution closer to robot
+          if (((dist1 < max_range) && (dist1 < dist2)) && check1) {
+            measurement = dist1;
+          } else if (((dist2 < max_range) && (dist1 >= dist2)) && check2) {
+            measurement = dist2;
+          }
+        }
+      }
+
+      // Check for intersection with walls
+      // wall 1, RH side 
+      double x_w1 = 0.5 * arena_x_length;
+      double y_w1 = slope * (x_w1 - x_gt) + y_gt;
+      bool check_w1 = (x_gt <= x_w1) && (x_w1 <= x_max);
+      double dist_w1 = sqrt(pow(x_gt - x_w1, 2) + pow(y_gt - y_w1, 2));
+      if ((dist_w1 < max_range) && (dist_w1 < measurement) && check_w1) {
+        measurement = dist_w1;
+      }
+
+      // wall 2, top side 
+      double y_w2 = 0.5 * arena_y_length;
+      double x_w2 = (1.0 / slope) * (y_w2 - y_gt) + x_gt;
+      bool check_w2 = (y_gt <= y_w2) && (y_w2 <= y_max);
+      double dist_w2 = sqrt(pow(x_gt - x_w2, 2) + pow(y_gt - y_w2, 2));
+      if ((dist_w2 < max_range) && (dist_w2 < measurement) && check_w2) {
+        measurement = dist_w2;
+      }
+
+      // wall 3, LH side 
+      double x_w3 = 0.5 * arena_x_length;
+      double y_w3 = slope * (x_w3 - x_gt) + y_gt;
+      bool check_w3 = (x_gt <= x_w3) && (x_w3 <= x_max);
+      double dist_w3 = sqrt(pow(x_gt - x_w3, 2) + pow(y_gt - y_w3, 2));
+      if ((dist_w3 < max_range) && (dist_w3 < measurement) && check_w3) {
+        measurement = dist_w3;
+      }
+
+      // wall 4, bottom side 
+      double y_w4 = 0.5 * arena_y_length;
+      double x_w4 = (1.0 / slope) * (y_w4 - y_gt) + x_gt;
+      bool check_w4 = (y_gt <= y_w4) && (y_w4 <= y_max);
+      double dist_w4 = sqrt(pow(x_gt - x_w4, 2) + pow(y_gt - y_w4, 2));
+      if ((dist_w4 < max_range) && (dist_w4 < measurement) && check_w4) {
+        measurement = dist_w4;
+      }
+
+      // add noise to measurements
+      measurement += sensor_range(get_random());
+
+      // Add range to array
+      ranges.push_back(measurement);
+    }
+
+    laser.ranges = ranges;
+    
+    // Publish laser message
+    laser_pub->publish(laser);
+  }
+
+  /// @brief Publishes the fake sensor reading
+  void fake_sensor()
+  {
     visualization_msgs::msg::MarkerArray marker_array;
 
-    turtlelib::Transform2D tf_world_sim =
-      turtlelib::Transform2D{{x_gt, y_gt},
-      theta_gt};
+    turtlelib::Transform2D tf_world_sim = turtlelib::Transform2D{{x_gt, y_gt}, theta_gt};
     turtlelib::Transform2D tf_sim_world = tf_world_sim.inv();
 
     builtin_interfaces::msg::Time array_time = this->get_clock()->now();
@@ -288,7 +417,7 @@ private:
       visualization_msgs::msg::Marker marker;
       marker.header.stamp = array_time;
       marker.header.frame_id = "red/base_footprint";
-      marker.id = i;         // so each has a unique ID
+      marker.id = i;
       marker.type = 3;       // cylinder
 
       // Check marker distance, delete if out of range
@@ -415,13 +544,12 @@ private:
     theta_gt = request->theta;
   }
 
+  /// \brief Function for selecting random number from a range
   std::mt19937 & get_random()
   {
     // static variables inside a function are created once and persist for the remainder of the program
     static std::random_device rd{};
     static std::mt19937 mt{rd()};
-    // we return a reference to the pseudo-random number genrator object. This is always the
-    // same object every time get_random is called
     return mt;
   }
 

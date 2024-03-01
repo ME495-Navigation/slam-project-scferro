@@ -27,8 +27,8 @@ Task C.7 - Create README file for nusim: COMPLETE
 Task C.8 - Add control of turtle with wheel_cmd: COMPLETE
 Task C.9 - Add noise and wheel slip: COMPLETE
 Task C.10 - Add basic sensor for obstacles: COMPLETE
-Task C.11 - Add collision detection: IN PROGRESS
-Task C.12 - Add simulated lidar: IN PROGRESS
+Task C.11 - Add collision detection: COMPLETE
+Task C.12 - Add simulated lidar: COMPLETE
 
 Task D.1 - Create DiffDrive Class: COMPLETE
 Task D.2 - Create DiffDrive tests: COMPLETE
