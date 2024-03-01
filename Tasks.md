@@ -25,6 +25,10 @@ Task C.5 - Add obstacles: COMPLETE
 Task C.6 - Create launch file: COMPLETE
 Task C.7 - Create README file for nusim: COMPLETE
 Task C.8 - Add control of turtle with wheel_cmd: COMPLETE
+Task C.9 - Add noise and wheel slip: COMPLETE
+Task C.10 - Add basic sensor for obstacles: IN PROGRESS
+Task C.11 - Add collision detection: IN PROGRESS
+Task C.12 - Add simulated lidar: IN PROGRESS
 
 Task D.1 - Create DiffDrive Class: COMPLETE
 Task D.2 - Create DiffDrive tests: COMPLETE
@@ -45,3 +49,6 @@ Task V.1 - Simulation Standalone config: IN PROGRESS
 Task V.2 - Simulation with Odometry config: IN PROGRESS
 Task V.3 - Real robot with Odometry config: IN PROGRESS
 Task V.4 - Simulated Robot With SLAM config: IN PROGRESS
+
+Task L.1 - Main SLAM Results: IN PROGRESS
+Task L.2 - SLAM in controlled environment: IN PROGRESS

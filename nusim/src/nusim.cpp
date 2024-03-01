@@ -9,8 +9,11 @@
 ///     obstacles/x (double[]): list of x coordinates of cylindrical obstacles (m)
 ///     obstacles/y (double[]): list of y coordinates of cylindrical obstacles (m)
 ///     obstacles/r (double): radius of all cylindrical obstacles (m)
-///     arena_x_length: X length of rectangular arena (m)
-///     arena_y_length: Y length of rectangular arena (m)
+///     arena_x_length (double): X length of rectangular arena (m)
+///     arena_y_length (double): Y length of rectangular arena (m)
+///     input_noise (double): the noise variance for moving the robot
+///     slip_fraction (double): defines how much the wheels slip
+///     max_range (double): maximum simulated lidar range
 /// SUBSCRIBES:
 ///     ~/red/wheel_cmd (nuturtlebot_msgs::msg::WheelCommands): the commands for the wheel motors
 /// PUBLISHES:
@@ -75,6 +78,10 @@ public:
     declare_parameter("wheel_radius", 0.066);
     declare_parameter("track_width", 0.160);
     declare_parameter("pose_rate", 1);
+    declare_parameter("input_noise", 1.0);
+    declare_parameter("slip_fraction", 0.05);
+    declare_parameter("max_range", 10.);
+    declare_parameter("basic_sensor_variance", 0.5);
 
     // Define parameter variables
     loop_rate = get_parameter("rate").as_int();
@@ -91,11 +98,19 @@ public:
     wheel_radius = get_parameter("wheel_radius").as_double();
     track_width = get_parameter("track_width").as_double();
     pose_rate = get_parameter("pose_rate").as_int();
+    input_noise = get_parameter("input_noise").as_double();
+    slip_fraction = get_parameter("slip_fraction").as_double();
+    max_range = get_parameter("max_range").as_double();
+    basic_sensor_variance = get_parameter("basic_sensor_variance").as_double();
 
     // Create diff_drive, initialize wheel speeds
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
     right_wheel_vel = 0.;
     left_wheel_vel = 0.;
+
+    // Create noise and slip ranges
+    noise_range = std::normal_distribution<>{0, sqrt(input_noise)};
+    slip_range = std::uniform_real_distribution<>{-slip_fraction, slip_fraction};
 
     // Publishers
     timestep_publisher = create_publisher<std_msgs::msg::UInt64>("~/timestep", 10);
@@ -142,8 +157,10 @@ private:
   double x_gt, y_gt, theta_gt;
   int encoder_ticks_per_rad;
   int loop_rate, pose_rate;
+  double slip_fraction, input_noise, max_range, basic_sensor_variance;
   nav_msgs::msg::Path nusim_path;
   geometry_msgs::msg::PoseStamped nusim_pose;
+  std::normal_distribution<> noise_range, slip_range;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr main_timer;
@@ -166,6 +183,7 @@ private:
     double delta_left_wheel, delta_right_wheel, left_wheel_angle, right_wheel_angle;
     std::vector<double> wheel_angles, state;
     turtlelib::Transform2D body_tf;
+    double left_wheel_vel_noise, right_wheel_vel_noise;
 
     // Add the timestep to the message
     message.data = timestep;
@@ -173,18 +191,26 @@ private:
     // Publish the current timestep
     timestep_publisher->publish(message);
 
+    // Add noise to wheel position updates
+    left_wheel_vel_noise = left_wheel_vel + noise_range(get_random());
+    right_wheel_vel_noise = right_wheel_vel + noise_range(get_random());
+
     // Calculate wheel position change
-    delta_left_wheel = left_wheel_vel / loop_rate;
-    delta_right_wheel = right_wheel_vel / loop_rate;
+    delta_left_wheel = left_wheel_vel_noise / loop_rate;
+    delta_right_wheel = right_wheel_vel_noise / loop_rate;
 
     // Find new wheel positions
     wheel_angles = diff_drive.return_wheels();
     left_wheel_angle = wheel_angles[0] + delta_left_wheel;
     right_wheel_angle = wheel_angles[1] + delta_right_wheel;
 
+    // Find wheel angles, adjusted with slip
+    left_wheel_angle_slip = wheel_angles[0] + (delta_left_wheel * (1 + slip_range(get_random())));
+    right_wheel_angle_slip = wheel_angles[1] + (delta_right_wheel * (1 + slip_range(get_random())));
+
     // Update diff_drive state
     wheel_angles = diff_drive.return_wheels();
-    body_tf = diff_drive.update_state(left_wheel_angle, right_wheel_angle);
+    body_tf = diff_drive.update_state(left_wheel_angle_slip, right_wheel_angle_slip);
     state = diff_drive.return_state();
     x_gt = state[0];
     y_gt = state[1];
