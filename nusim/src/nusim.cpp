@@ -85,9 +85,9 @@ public:
     declare_parameter("slip_fraction", 0.05);
     declare_parameter("max_range", 3.5);
     declare_parameter("min_range", 0.12);
-    declare_parameter("basic_sensor_variance", 0.05);
+    declare_parameter("basic_sensor_variance", 0.01);
     declare_parameter("collision_radius", 0.11);
-    declare_parameter("laser_noise", 1.0);
+    declare_parameter("laser_noise", 0.01);
     declare_parameter("laser_samples", 360);
 
     // Define parameter variables
@@ -124,6 +124,7 @@ public:
     noise_range = std::normal_distribution<>{0, sqrt(input_noise)};
     slip_range = std::uniform_real_distribution<>{-1.0 * slip_fraction, slip_fraction};
     sensor_range = std::normal_distribution<>{0, sqrt(basic_sensor_variance)};
+    laser_range = std::normal_distribution<>{0, sqrt(laser_noise)};
 
     // Publishers
     timestep_publisher = create_publisher<std_msgs::msg::UInt64>("~/timestep", 10);
@@ -180,7 +181,7 @@ private:
   double collision_radius;
   nav_msgs::msg::Path nusim_path;
   geometry_msgs::msg::PoseStamped nusim_pose;
-  std::normal_distribution<> noise_range, sensor_range;
+  std::normal_distribution<> noise_range, sensor_range, laser_range;
   std::uniform_real_distribution<> slip_range;
 
   // Create ROS publishers, timers, broadcasters, etc.
@@ -371,25 +372,25 @@ private:
       }
 
       // wall 3, LH side 
-      double x_w3 = 0.5 * arena_x_length;
+      double x_w3 = -0.5 * arena_x_length;
       double y_w3 = slope * (x_w3 - x_gt) + y_gt;
-      bool check_w3 = (x_gt <= x_w3) && (x_w3 <= x_max);
+      bool check_w3 = (x_gt >= x_w3) && (x_w3 >= x_max);
       double dist_w3 = sqrt(pow(x_gt - x_w3, 2) + pow(y_gt - y_w3, 2));
       if ((dist_w3 < max_range) && (dist_w3 < measurement) && check_w3) {
         measurement = dist_w3;
       }
 
       // wall 4, bottom side 
-      double y_w4 = 0.5 * arena_y_length;
+      double y_w4 = -0.5 * arena_y_length;
       double x_w4 = (1.0 / slope) * (y_w4 - y_gt) + x_gt;
-      bool check_w4 = (y_gt <= y_w4) && (y_w4 <= y_max);
+      bool check_w4 = (y_gt >= y_w4) && (y_w4 >= y_max);
       double dist_w4 = sqrt(pow(x_gt - x_w4, 2) + pow(y_gt - y_w4, 2));
       if ((dist_w4 < max_range) && (dist_w4 < measurement) && check_w4) {
         measurement = dist_w4;
       }
 
       // add noise to measurements
-      measurement += sensor_range(get_random());
+      measurement += laser_range(get_random());
 
       // Add range to array
       ranges.push_back(measurement);

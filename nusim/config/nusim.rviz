@@ -218,8 +218,8 @@ Visualization Manager:
       Name: LaserScan
       Position Transformer: XYZ
       Selectable: true
-      Size (Pixels): 10
-      Size (m): 0.01
+      Size (Pixels): 20
+      Size (m): 0.05
       Style: Flat Squares
       Topic:
         Depth: 5
