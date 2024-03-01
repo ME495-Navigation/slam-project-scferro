@@ -89,6 +89,7 @@ public:
     declare_parameter("collision_radius", 0.11);
     declare_parameter("laser_noise", 0.01);
     declare_parameter("laser_samples", 360);
+    declare_parameter("draw_only", false);
 
     // Define parameter variables
     loop_rate = get_parameter("rate").as_int();
@@ -114,6 +115,7 @@ public:
     collision_radius = get_parameter("collision_radius").as_double();
     laser_noise = get_parameter("laser_noise").as_double();
     laser_samples = get_parameter("laser_samples").as_int();
+    draw_only = get_parameter("draw_only").as_bool();
 
     // Create diff_drive, initialize wheel speeds
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
@@ -183,6 +185,7 @@ private:
   geometry_msgs::msg::PoseStamped nusim_pose;
   std::normal_distribution<> noise_range, sensor_range, laser_range;
   std::uniform_real_distribution<> slip_range;
+  bool draw_only;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr main_timer;
@@ -202,82 +205,84 @@ private:
   /// \brief The main timer callback function, publishes the current timestep, broadcasts groundtruth transform
   void timer_callback()
   {
-    geometry_msgs::msg::TransformStamped tf_base;
-    tf2::Quaternion quat_robot;
-    auto message = std_msgs::msg::UInt64();
-    double delta_left_wheel, delta_right_wheel;
-    std::vector<double> wheel_angles, state;
-    turtlelib::Transform2D body_tf;
-    double left_wheel_angle_slip, right_wheel_angle_slip;
+    if (draw_only == false) {
+      geometry_msgs::msg::TransformStamped tf_base;
+      tf2::Quaternion quat_robot;
+      auto message = std_msgs::msg::UInt64();
+      double delta_left_wheel, delta_right_wheel;
+      std::vector<double> wheel_angles, state;
+      turtlelib::Transform2D body_tf;
+      double left_wheel_angle_slip, right_wheel_angle_slip;
 
-    // Add the timestep to the message
-    message.data = timestep;
+      // Add the timestep to the message
+      message.data = timestep;
 
-    // Publish the current timestep
-    timestep_publisher->publish(message);
+      // Publish the current timestep
+      timestep_publisher->publish(message);
 
-    // Add noise to wheel position updates if wheel are moving
-    if (left_wheel_vel != 0.) {
-      delta_left_wheel = (left_wheel_vel + noise_range(get_random())) / loop_rate;
-    } else {
-      delta_left_wheel = 0.0;
+      // Add noise to wheel position updates if wheel are moving
+      if (left_wheel_vel != 0.) {
+        delta_left_wheel = (left_wheel_vel + noise_range(get_random())) / loop_rate;
+      } else {
+        delta_left_wheel = 0.0;
+      }
+
+      if (right_wheel_vel != 0.) {
+        delta_right_wheel = (right_wheel_vel + noise_range(get_random())) / loop_rate;
+      } else {
+        delta_right_wheel = 0.0;
+      }
+
+      // Find wheel angles adjusted with slip
+      wheel_angles = diff_drive.return_wheels();
+      left_wheel_angle_slip = wheel_angles[0] + (delta_left_wheel * (1 + slip_range(get_random())));
+      right_wheel_angle_slip = wheel_angles[1] + (delta_right_wheel * (1 + slip_range(get_random())));
+
+      // Update diff_drive state
+      body_tf = diff_drive.update_state(left_wheel_angle_slip, right_wheel_angle_slip);
+      state = diff_drive.return_state();
+      x_gt = state[0];
+      y_gt = state[1];
+      theta_gt = state[2];
+
+      // Check for collisions
+      check_collisions();
+
+      // Create base link gt transforms
+      // Refer to Citation [3] ChatGPT
+      tf_base.header.stamp = get_clock()->now();
+      tf_base.header.frame_id = "nusim/world";
+      tf_base.child_frame_id = "red/base_footprint";
+      tf_base.transform.translation.x = x_gt;
+      tf_base.transform.translation.y = y_gt;
+      tf_base.transform.translation.z = 0.0;
+
+      quat_robot.setRPY(0, 0, theta_gt);
+      tf_base.transform.rotation.x = quat_robot.x();
+      tf_base.transform.rotation.y = quat_robot.y();
+      tf_base.transform.rotation.z = quat_robot.z();
+      tf_base.transform.rotation.w = quat_robot.w();
+
+      // Publish transforms
+      tf_broadcaster->sendTransform(tf_base);
+
+      // Publish sensor data
+      publish_sensor_data(wheel_angles[0], wheel_angles[1]);
+
+      // Add current pose to path and publish path
+      if ((timestep % (loop_rate / pose_rate))==0) {
+        update_path();
+      }
+
+      // Increase timestep
+      timestep++;
     }
-
-    if (right_wheel_vel != 0.) {
-      delta_right_wheel = (right_wheel_vel + noise_range(get_random())) / loop_rate;
-    } else {
-      delta_right_wheel = 0.0;
-    }
-
-    // Find wheel angles adjusted with slip
-    wheel_angles = diff_drive.return_wheels();
-    left_wheel_angle_slip = wheel_angles[0] + (delta_left_wheel * (1 + slip_range(get_random())));
-    right_wheel_angle_slip = wheel_angles[1] + (delta_right_wheel * (1 + slip_range(get_random())));
-
-    // Update diff_drive state
-    body_tf = diff_drive.update_state(left_wheel_angle_slip, right_wheel_angle_slip);
-    state = diff_drive.return_state();
-    x_gt = state[0];
-    y_gt = state[1];
-    theta_gt = state[2];
-
-    // Check for collisions
-    check_collisions();
-
-    // Create base link gt transforms
-    // Refer to Citation [3] ChatGPT
-    tf_base.header.stamp = get_clock()->now();
-    tf_base.header.frame_id = "nusim/world";
-    tf_base.child_frame_id = "red/base_footprint";
-    tf_base.transform.translation.x = x_gt;
-    tf_base.transform.translation.y = y_gt;
-    tf_base.transform.translation.z = 0.0;
-
-    quat_robot.setRPY(0, 0, theta_gt);
-    tf_base.transform.rotation.x = quat_robot.x();
-    tf_base.transform.rotation.y = quat_robot.y();
-    tf_base.transform.rotation.z = quat_robot.z();
-    tf_base.transform.rotation.w = quat_robot.w();
-
-    // Publish transforms
-    tf_broadcaster->sendTransform(tf_base);
 
     // Publish walls
     publish_walls();
 
     // Publish obstacles
     publish_obstacles();
-
-    // Publish sensor data
-    publish_sensor_data(wheel_angles[0], wheel_angles[1]);
-
-    // Add current pose to path and publish path
-    if ((timestep % (loop_rate / pose_rate))==0) {
-      update_path();
-    }
-
-    // Increase timestep
-    timestep++;
   }
 
   /// @brief Publishes the fake sensor reading
