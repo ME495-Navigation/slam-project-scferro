@@ -208,7 +208,6 @@ private:
     double delta_left_wheel, delta_right_wheel, left_wheel_angle, right_wheel_angle;
     std::vector<double> wheel_angles, state;
     turtlelib::Transform2D body_tf;
-    double left_wheel_vel_noise, right_wheel_vel_noise;
     double left_wheel_angle_slip, right_wheel_angle_slip;
 
     // Add the timestep to the message
@@ -217,27 +216,28 @@ private:
     // Publish the current timestep
     timestep_publisher->publish(message);
 
-    // Add noise to wheel position updates
-    left_wheel_vel_noise = left_wheel_vel + noise_range(get_random());
-    right_wheel_vel_noise = right_wheel_vel + noise_range(get_random());
+    // Add noise to wheel position updates if wheel are moving
+    if (left_wheel_vel != 0.) {
+      delta_left_wheel = (left_wheel_vel + noise_range(get_random())) / loop_rate;
+    } else {
+      delta_left_wheel = 0.0;
+    }
 
-    // Calculate wheel position change
-    delta_left_wheel = left_wheel_vel_noise / loop_rate;
-    delta_right_wheel = right_wheel_vel_noise / loop_rate;
-
-    // Find new wheel positions
-    wheel_angles = diff_drive.return_wheels();
-    left_wheel_angle = wheel_angles[0] + delta_left_wheel;
-    right_wheel_angle = wheel_angles[1] + delta_right_wheel;
+    if (right_wheel_vel != 0.) {
+      delta_right_wheel = (right_wheel_vel + noise_range(get_random())) / loop_rate;
+    } else {
+      delta_right_wheel = 0.0;
+    }
 
     // Find wheel angles, adjusted with slip
+    wheel_angles = diff_drive.return_wheels();
     left_wheel_angle_slip = wheel_angles[0] + (delta_left_wheel * (1 + slip_range(get_random())));
     right_wheel_angle_slip = wheel_angles[1] + (delta_right_wheel * (1 + slip_range(get_random())));
 
     // Update diff_drive state
-    wheel_angles = diff_drive.return_wheels();
     body_tf = diff_drive.update_state(left_wheel_angle_slip, right_wheel_angle_slip);
     state = diff_drive.return_state();
+    wheel_angles = diff_drive.return_wheels();
     x_gt = state[0];
     y_gt = state[1];
     theta_gt = state[2];
@@ -270,7 +270,7 @@ private:
     publish_obstacles();
 
     // Publish sensor data
-    publish_sensor_data(left_wheel_angle, right_wheel_angle);
+    publish_sensor_data(wheel_angles[0], wheel_angles[1]);
 
     // Add current pose to path and publish path
     if ((timestep % (loop_rate / pose_rate))==0) {
