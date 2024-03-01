@@ -6,9 +6,9 @@
 ///     x0 (double): initial x position of the turtlebot (m)
 ///     y0 (double): initial y position of the turtlebot (m)
 ///     theta0 (double): initial theta angle of the turtlebot (rad)
-///     obstacles/x (double[]): list of x coordinates of cylindrical obstacles (m)
-///     obstacles/y (double[]): list of y coordinates of cylindrical obstacles (m)
-///     obstacles/r (double): radius of all cylindrical obstacles (m)
+///     obstacles_x (double[]): list of x coordinates of cylindrical obstacles (m)
+///     obstacles_y (double[]): list of y coordinates of cylindrical obstacles (m)
+///     obstacles_radius (double): radius of all cylindrical obstacles (m)
 ///     arena_x_length (double): X length of rectangular arena (m)
 ///     arena_y_length (double): Y length of rectangular arena (m)
 ///     input_noise (double): the noise variance for moving the robot
@@ -65,6 +65,7 @@ public:
   {
     // Parameters and default values
     declare_parameter("rate", 200);
+    declare_parameter("fake_sensor_rate", 5);
     declare_parameter("x0", 0.0);
     declare_parameter("y0", 0.0);
     declare_parameter("theta0", 0.0);
@@ -85,6 +86,7 @@ public:
 
     // Define parameter variables
     loop_rate = get_parameter("rate").as_int();
+    fake_sensor_rate = get_parameter("fake_sensor_rate").as_int();
     x0 = get_parameter("x0").as_double();
     y0 = get_parameter("y0").as_double();
     theta0 = get_parameter("theta0").as_double();
@@ -118,6 +120,7 @@ public:
     walls_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", 10);
     sensor_data_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>("red/sensor_data", 10);
     path_pub = create_publisher<nav_msgs::msg::Path>("red/path", 10);
+    fake_sensor_pub = create_publisher<visualization_msgs::msg::MarkerArray>("fake_sensor", 10);
 
     // Subscribers
     wheel_cmd_sub = create_subscription<nuturtlebot_msgs::msg::WheelCommands>(
@@ -135,11 +138,15 @@ public:
       "~/teleport",
       std::bind(&Nusim::teleport_callback, this, std::placeholders::_1, std::placeholders::_2));
 
-    // Main timer
+    // Timers
     int cycle_time = 1000.0 / loop_rate;
+    int fake_sensor_cycle_time = 1000.0 / loop_rate;
     main_timer = this->create_wall_timer(
       std::chrono::milliseconds(cycle_time),
       std::bind(&Nusim::timer_callback, this));
+    fake_sensor_timer = this->create_wall_timer(
+      std::chrono::milliseconds(fake_sensor_cycle_time),
+      std::bind(&Nusim::fake_sensor_timer_callback, this));
   }
 
 private:
@@ -156,7 +163,7 @@ private:
   double obstacles_radius;
   double x_gt, y_gt, theta_gt;
   int encoder_ticks_per_rad;
-  int loop_rate, pose_rate;
+  int loop_rate, pose_rate, fake_sensor_rate;
   double slip_fraction, input_noise, max_range, basic_sensor_variance;
   nav_msgs::msg::Path nusim_path;
   geometry_msgs::msg::PoseStamped nusim_pose;
@@ -164,9 +171,11 @@ private:
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr main_timer;
+  rclcpp::TimerBase::SharedPtr fake_sensor_timer;
   rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_publisher;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstacle_publisher;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr walls_publisher;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr fake_sensor_pub;
   rclcpp::Publisher<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_data_pub;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_server;
@@ -250,6 +259,63 @@ private:
 
     // Increase timestep
     timestep++;
+  }
+
+  /// \brief Publishes the fake sensor reading
+  void fake_sensor_timer_callback()
+  {
+    publish_fake_obstacles();
+  }
+
+  /// @brief publish simulated obstacle marker locations
+  void publish_fake_obstacles()
+  {
+    visualization_msgs::msg::MarkerArray marker_array;
+
+    // Iterate through obstacles
+    for (int i = 0; i < obstacles_x.size(); i++) {
+      // Create marker message
+      visualization_msgs::msg::Marker marker;
+      marker.header.stamp = current_time;
+      marker.header.frame_id = "red/base_footprint";
+      marker.id = i;         // so each has a unique ID
+      marker.type = 3;       // cylinder
+
+      // Check marker distance, delete if out of range
+      double obstacle_dist = sqrt(pow((x_gt - obstacles_x.at(i)), 2) + pow((y_gt - obstacles_y.at(i)), 2));
+      if (obstacle_dist > laser_max_range) {
+        marker.action = 2; // delete
+      } else {
+        marker.action = 0; // add/modify
+      }
+
+      // Set color to yellow
+      marker.color.r = 1.0;
+      marker.color.g = 1.0;
+      marker.color.b = 0.0;
+      marker.color.a = 1.0;
+
+      // Set radius
+      marker.scale.x = 2 * obstacles_radius;
+      marker.scale.y = 2 * obstacles_radius;
+      marker.scale.z = 0.25;
+      
+      // get the obstacle location relative to the robot frame
+      const auto config_rf = (robot.get_config().inv())(turtlelib::Vector2D{obx.at(i), oby.at(i)});
+      marker.pose.position.x = config_rf.x;
+      marker.pose.position.y = config_rf.y;
+      if (do_noise) {
+        marker.pose.position.x += sensor_dist(get_random());
+        marker.pose.position.y += sensor_dist(get_random());
+      }
+      marker.pose.position.z = 0.125;
+
+      // Add to marker array
+      marker_array.markers.push_back(marker);
+    }
+
+    // Publish marker array
+    fake_sensor_pub->publish(marker_array);
   }
 
   /// \brief Updates the robot path with the current pose and publishes the path

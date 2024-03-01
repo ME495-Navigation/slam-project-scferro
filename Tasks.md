@@ -26,7 +26,7 @@ Task C.6 - Create launch file: COMPLETE
 Task C.7 - Create README file for nusim: COMPLETE
 Task C.8 - Add control of turtle with wheel_cmd: COMPLETE
 Task C.9 - Add noise and wheel slip: COMPLETE
-Task C.10 - Add basic sensor for obstacles: IN PROGRESS
+Task C.10 - Add basic sensor for obstacles: COMPLETE
 Task C.11 - Add collision detection: IN PROGRESS
 Task C.12 - Add simulated lidar: IN PROGRESS
 
