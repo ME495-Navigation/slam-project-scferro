@@ -9,7 +9,7 @@
 
     <!-- Launch nusim launch file if robot==nusim -->
     <include file="$(find-pkg-share nusim)/launch/nusim.launch.xml" if="$(eval '\'$(var robot)\' == \'nusim\'')">
-        <arg name="use_rviz_sim" value="false" />
+        <arg name="use_rviz" value="$(var use_rviz)" />
     </include>
 
     <!-- Load the blue turtle -->
@@ -48,10 +48,10 @@
     <!-- Launch numsr_turtlebot node if robot==localhost -->
     <node pkg="numsr_turtlebot" exec="numsr_turtlebot" if="$(eval '\'$(var robot)\' == \'localhost\'')"/>
 
-    <!-- Launch hlds_laser launch file if robot==localhost -->
-    <include pkg="numsr_turtlebot" exec="numsr_turtlebot" if="$(eval '\'$(var robot)\' == \'localhost\'')"/>
+    <!-- Launch numsr_turtlebot node if robot==localhost -->
+    <include file="$(find-pkg-share hls_lfcd_lds_driver)/launch/hlds_laser.launch.py" if="$(eval '\'$(var robot)\' == \'localhost\'')"/>
     
     <!-- Publish a static TF between the odom and world frames-->
-    <node file="$(find-pkg-share hls_lfcd_lds_driver)/launch/hlds_laser.launch.py" if="$(eval '\'$(var robot)\' == \'localhost\'')"/>
+    <node pkg="tf2_ros" exec="static_transform_publisher" args="0 0 0 0 0 0 1 /nusim/world /odom"/>
 
 </launch>

@@ -18,6 +18,7 @@
 ///     ~/obstacles (visualization_msgs::msg::MarkerArray): marker objects representing cylinders
 ///     ~/walls (visualization_msgs::msg::MarkerArray): marker objects representing walls of arena
 ///     red/sensor_data (nuturtlebot_msgs::msg::SensorData): encoder data for the simulated robot
+///     red/path (nav_msgs::msg::Path): the path of the nusim robot
 /// SERVERS:
 ///     ~/reset (std_srvs::srv::Empty): resets the simulation to the initial state
 ///     ~/teleport (nusim::srv::Teleport): teleports the turtle to a specified x, y, theta value
@@ -48,6 +49,8 @@
 #include "nuturtlebot_msgs/msg/wheel_commands.hpp"
 #include "nuturtlebot_msgs/msg/sensor_data.hpp"
 #include "turtlelib/diff_drive.hpp"
+#include "nav_msgs/msg/path.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 using namespace std::chrono_literals;
 
@@ -71,6 +74,7 @@ public:
     declare_parameter("encoder_ticks_per_rad", 651.8986469);
     declare_parameter("wheel_radius", 0.066);
     declare_parameter("track_width", 0.160);
+    declare_parameter("pose_rate", 1);
 
     // Define parameter variables
     loop_rate = get_parameter("rate").as_int();
@@ -86,6 +90,7 @@ public:
     encoder_ticks_per_rad = get_parameter("encoder_ticks_per_rad").as_double();
     wheel_radius = get_parameter("wheel_radius").as_double();
     track_width = get_parameter("track_width").as_double();
+    pose_rate = get_parameter("pose_rate").as_int();
 
     // Create diff_drive, initialize wheel speeds
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
@@ -97,6 +102,7 @@ public:
     obstacle_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/obstacles", 10);
     walls_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", 10);
     sensor_data_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>("red/sensor_data", 10);
+    path_pub = create_publisher<nav_msgs::msg::Path>("red/path", 10);
 
     // Subscribers
     wheel_cmd_sub = create_subscription<nuturtlebot_msgs::msg::WheelCommands>(
@@ -135,7 +141,9 @@ private:
   double obstacles_radius;
   double x_gt, y_gt, theta_gt;
   int encoder_ticks_per_rad;
-  int loop_rate;
+  int loop_rate, pose_rate;
+  nav_msgs::msg::Path nusim_path;
+  geometry_msgs::msg::PoseStamped nusim_pose;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr main_timer;
@@ -143,6 +151,7 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstacle_publisher;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr walls_publisher;
   rclcpp::Publisher<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_data_pub;
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_server;
   rclcpp::Service<nusim::srv::Teleport>::SharedPtr teleport_server;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
@@ -208,8 +217,40 @@ private:
     // Publish sensor data
     publish_sensor_data(left_wheel_angle, right_wheel_angle);
 
+    // Add current pose to path and publish path
+    if ((timestep % (loop_rate / pose_rate))==0) {
+      update_path();
+    }
+
     // Increase timestep
     timestep++;
+  }
+
+  /// \brief Updates the robot path with the current pose and publishes the path
+  void update_path()
+  {
+    // Update ground truth red turtle path
+    nusim_path.header.stamp = get_clock()->now();
+    nusim_path.header.frame_id = "nusim/world";
+
+    // Create new pose stamped
+    nusim_pose.header.stamp = get_clock()->now();
+    nusim_pose.header.frame_id = "nusim/world";
+    nusim_pose.pose.position.x = x_gt;
+    nusim_pose.pose.position.y = y_gt;
+    nusim_pose.pose.position.z = 0.0;
+
+    // Add rotation quaternion about Z
+    tf2::Quaternion quaternion;
+    quaternion.setRPY(0, 0, theta_gt);
+    nusim_pose.pose.orientation.x = quaternion.x();
+    nusim_pose.pose.orientation.y = quaternion.y();
+    nusim_pose.pose.orientation.z = quaternion.z();
+    nusim_pose.pose.orientation.w = quaternion.w();
+
+    // Add pose to path and publish path
+    nusim_path.poses.push_back(nusim_pose);
+    path_pub->publish(nusim_path);
   }
 
   /// \brief The wheel_cmd callback function, updates wheel speeds and robot ground truth position

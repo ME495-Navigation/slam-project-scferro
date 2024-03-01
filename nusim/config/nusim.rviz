@@ -147,6 +147,18 @@ Visualization Manager:
       Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
+      Name: RelativeObstaclesMarkerArray
+      Namespaces:
+        "": true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /nusim/obstacles
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
       Name: WallsMarkerArray
       Namespaces:
         "": true
@@ -157,6 +169,17 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /nusim/walls
       Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/Path
+      Enabled: true
+      Name: Path
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /red/path
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
