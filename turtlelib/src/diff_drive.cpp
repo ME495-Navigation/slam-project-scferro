@@ -67,4 +67,10 @@ namespace turtlelib {
         return wheels;
     }
 
+    void DiffDrive::set_state(double x_pos, double y_pos, double theta) {
+        x_robot = x_pos;
+        y_robot = y_pos;
+        theta_robot = theta;
+    }
+
 }

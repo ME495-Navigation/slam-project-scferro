@@ -64,6 +64,12 @@ namespace turtlelib
         /// \brief return the current wheel positions of the robot
         /// \return the left and right wheel position of the robot
         std::vector<double> return_wheels();
+
+        /// \brief update the state of the robot based on new wheel positions
+        /// \param x_pos the new x coordinate of the robot
+        /// \param y_pos the new y coordinate of the robot
+        /// \param theta the new theta angle of the robot
+        void set_state(double x_pos, double y_pos, double theta);
     };
 }
 

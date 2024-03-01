@@ -39,6 +39,7 @@
 #include <string>
 #include <random>
 #include <vector>
+#include <functional>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/u_int64.hpp"
@@ -83,6 +84,7 @@ public:
     declare_parameter("slip_fraction", 0.05);
     declare_parameter("max_range", 10.);
     declare_parameter("basic_sensor_variance", 0.5);
+    declare_parameter("collision_radius", 0.11);
 
     // Define parameter variables
     loop_rate = get_parameter("rate").as_int();
@@ -104,6 +106,7 @@ public:
     slip_fraction = get_parameter("slip_fraction").as_double();
     max_range = get_parameter("max_range").as_double();
     basic_sensor_variance = get_parameter("basic_sensor_variance").as_double();
+    collision_radius = get_parameter("collision_radius").as_double();
 
     // Create diff_drive, initialize wheel speeds
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
@@ -112,7 +115,8 @@ public:
 
     // Create noise and slip ranges
     noise_range = std::normal_distribution<>{0, sqrt(input_noise)};
-    slip_range = std::uniform_real_distribution<>{-slip_fraction, slip_fraction};
+    slip_range = std::uniform_real_distribution<>{-1.0 * slip_fraction, slip_fraction};
+    sensor_range = std::normal_distribution<>{0, sqrt(basic_sensor_variance)};
 
     // Publishers
     timestep_publisher = create_publisher<std_msgs::msg::UInt64>("~/timestep", 10);
@@ -158,16 +162,17 @@ private:
   double wheel_radius, track_width;
   double right_wheel_vel, left_wheel_vel, motor_cmd_per_rad_sec;
   turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
-  std::vector<double> obstacles_x;
-  std::vector<double> obstacles_y;
+  std::vector<double> obstacles_x, obstacles_y;
   double obstacles_radius;
   double x_gt, y_gt, theta_gt;
   int encoder_ticks_per_rad;
   int loop_rate, pose_rate, fake_sensor_rate;
   double slip_fraction, input_noise, max_range, basic_sensor_variance;
+  double collision_radius;
   nav_msgs::msg::Path nusim_path;
   geometry_msgs::msg::PoseStamped nusim_pose;
-  std::normal_distribution<> noise_range, slip_range;
+  std::normal_distribution<> noise_range, sensor_range;
+  std::uniform_real_distribution<> slip_range;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr main_timer;
@@ -193,6 +198,7 @@ private:
     std::vector<double> wheel_angles, state;
     turtlelib::Transform2D body_tf;
     double left_wheel_vel_noise, right_wheel_vel_noise;
+    double left_wheel_angle_slip, right_wheel_angle_slip;
 
     // Add the timestep to the message
     message.data = timestep;
@@ -224,6 +230,9 @@ private:
     x_gt = state[0];
     y_gt = state[1];
     theta_gt = state[2];
+
+    // Check for collisions
+    check_collisions();
 
     // Create base link gt transforms
     // Refer to Citation [3] ChatGPT
@@ -261,29 +270,30 @@ private:
     timestep++;
   }
 
-  /// \brief Publishes the fake sensor reading
+  /// @brief Publishes the fake sensor reading
   void fake_sensor_timer_callback()
-  {
-    publish_fake_obstacles();
-  }
-
-  /// @brief publish simulated obstacle marker locations
-  void publish_fake_obstacles()
   {
     visualization_msgs::msg::MarkerArray marker_array;
 
+    turtlelib::Transform2D tf_world_sim =
+      turtlelib::Transform2D{{x_gt, y_gt},
+      theta_gt};
+    turtlelib::Transform2D tf_sim_world = tf_world_sim.inv();
+
+    builtin_interfaces::msg::Time array_time = this->get_clock()->now();
+
     // Iterate through obstacles
-    for (int i = 0; i < obstacles_x.size(); i++) {
+    for (u_int i = 0; i < obstacles_x.size(); i++) {
       // Create marker message
       visualization_msgs::msg::Marker marker;
-      marker.header.stamp = current_time;
+      marker.header.stamp = array_time;
       marker.header.frame_id = "red/base_footprint";
       marker.id = i;         // so each has a unique ID
       marker.type = 3;       // cylinder
 
       // Check marker distance, delete if out of range
       double obstacle_dist = sqrt(pow((x_gt - obstacles_x.at(i)), 2) + pow((y_gt - obstacles_y.at(i)), 2));
-      if (obstacle_dist > laser_max_range) {
+      if (obstacle_dist > max_range) {
         marker.action = 2; // delete
       } else {
         marker.action = 0; // add/modify
@@ -299,15 +309,19 @@ private:
       marker.scale.x = 2 * obstacles_radius;
       marker.scale.y = 2 * obstacles_radius;
       marker.scale.z = 0.25;
+
+      // Make a tf for the obstacle
+      turtlelib::Transform2D tf_world_obs =
+        turtlelib::Transform2D{{obstacles_x.at(i), obstacles_y.at(i)},
+        0.0};
       
       // get the obstacle location relative to the robot frame
-      const auto config_rf = (robot.get_config().inv())(turtlelib::Vector2D{obx.at(i), oby.at(i)});
-      marker.pose.position.x = config_rf.x;
-      marker.pose.position.y = config_rf.y;
-      if (do_noise) {
-        marker.pose.position.x += sensor_dist(get_random());
-        marker.pose.position.y += sensor_dist(get_random());
-      }
+      const auto tf_sim_obs = tf_sim_world * tf_world_obs;
+      marker.pose.position.x = tf_sim_obs.translation().x;
+      marker.pose.position.y = tf_sim_obs.translation().y;
+      
+      marker.pose.position.x += sensor_range(get_random());
+      marker.pose.position.y += sensor_range(get_random());
       marker.pose.position.z = 0.125;
 
       // Add to marker array
@@ -345,6 +359,26 @@ private:
     path_pub->publish(nusim_path);
   }
 
+  /// @brief Check if the robot has collided with an obstacle and update the config if yes
+  void check_collisions()
+  {
+    for (u_int i = 0; i < obstacles_x.size(); i++) {
+      double obstacle_dist = sqrt(pow((x_gt - obstacles_x.at(i)), 2) + pow((y_gt - obstacles_y.at(i)), 2));
+      
+      // If collided, shift robot tangent to obstacle
+      if (obstacle_dist < collision_radius + obstacles_radius) {
+        const auto ux = (x_gt - obstacles_x.at(i)) / obstacle_dist;
+        const auto uy = (y_gt - obstacles_y.at(i)) / obstacle_dist;
+        const auto shift = collision_radius + obstacles_radius - obstacle_dist;
+        x_gt += shift * ux;
+        y_gt += shift * uy;
+
+        // update robot position
+        diff_drive.set_state(x_gt, y_gt, theta_gt);
+      }
+    }
+  }
+
   /// \brief The wheel_cmd callback function, updates wheel speeds and robot ground truth position
   void wheel_cmd_callback(const nuturtlebot_msgs::msg::WheelCommands & msg)
   {
@@ -379,6 +413,16 @@ private:
     x_gt = request->x;
     y_gt = request->y;
     theta_gt = request->theta;
+  }
+
+  std::mt19937 & get_random()
+  {
+    // static variables inside a function are created once and persist for the remainder of the program
+    static std::random_device rd{};
+    static std::mt19937 mt{rd()};
+    // we return a reference to the pseudo-random number genrator object. This is always the
+    // same object every time get_random is called
+    return mt;
   }
 
   /// @brief Publish encoder ticks
