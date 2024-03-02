@@ -20,6 +20,7 @@ find_package(turtlelib REQUIRED)
 find_package(nuturtlebot_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(Armadillo REQUIRED)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -38,6 +39,11 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
+
+add_executable(nuslam src/nuslam.cpp)
+ament_target_dependencies(nuslam rclcpp std_msgs geometry_msgs sensor_msgs std_srvs tf2 tf2_ros visualization_msgs nuturtlebot_msgs nav_msgs)
+target_link_libraries(nuslam turtlelib::turtlelib "${cpp_typesupport_target}")
+
 
 install(TARGETS
   nuslam

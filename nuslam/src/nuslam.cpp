@@ -58,7 +58,7 @@ public:
     declare_parameter("wheel_right", "");
     declare_parameter("wheel_radius", -1.0);
     declare_parameter("track_width", -1.0);
-    declare_parameter("max_obstacles", 5);
+    declare_parameter("max_obs", 5);
     declare_parameter("obstacle_radius", 0.038);
 
     // Define parameter variables
@@ -69,7 +69,7 @@ public:
     wheel_right = get_parameter("wheel_right").as_string();
     wheel_radius = get_parameter("wheel_radius").as_double();
     track_width = get_parameter("track_width").as_double();
-    max_obstacles = get_parameter("max_obstacles").as_int();
+    max_obs = get_parameter("max_obs").as_int();
     obstacle_radius = get_parameter("obstacle_radius").as_double();
 
     // Check if parameters have been defined. if not, throw runtime error
@@ -88,6 +88,10 @@ public:
     tf_odom_body = turtlelib::Transform2D{{0.0, 0.0}, 0.0};
     tf_map_odom = turtlelib::Transform2D{{0.0, 0.0}, 0.0};
     tf_map_body = turtlelib::Transform2D{{0.0, 0.0}, 0.0};
+
+    // Create slam_state vectors. slam state vector includes robot x,y.theta and x,y for obstacles
+    slam_state = arma::vec(max_obs * 2 + 3, arma::fill::zeros);
+    slam_state_prev = arma::vec(max_obs * 2 + 3, arma::fill::zeros);
 
     // Publishers
     odom_pub = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
@@ -115,7 +119,7 @@ public:
 private:
   // Initialize parameter variables
   int rate;
-  int loop_rate, max_obstacles;
+  int loop_rate, max_obs;
   std::string body_id, odom_id, wheel_left, wheel_right;
   double track_width, wheel_radius, obstacle_radius;
   bool use_lidar;
@@ -136,9 +140,68 @@ private:
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
 
   /// \brief Callback for receiving obstacle position messages from the fake sensor
-  void fake_sensor_callback(const visualization_msgs::msg::MarkerArray & sensor)
+  void fake_sensor_callback(const visualization_msgs::msg::MarkerArray & msg)
   {
     // Run prediction step
+    predict_ekf();
+
+    // Add marker positions to measurement 
+    for (size_t i = 0; i < msg.markers.size(); i++) {
+      // extract coordinates, id, and action from message
+      double mx = msg.markers.at(i).pose.position.x;
+      double my = msg.markers.at(i).pose.position.y;
+      int id = msg.markers.at(i).id;
+      int act = msg.markers.at(i).action;
+
+      if (act == 2) {
+        // Obstacle is out of range. Skip this loop iteration!
+        continue;
+      } else {
+        // incorporate the measurement into ekf algorithm if obstacle in range
+        
+      }
+    }
+
+    // Publish slam tf
+    publish_slam_tf();
+
+    // Update slam marker positions
+    publish_slam_obstacles();
+
+    // Update slam path
+    update_path();
+
+    // Save current slam state as prev
+    slam_state_prev = slam_state;
+  }
+
+  /// \brief Publishes map to odom transform from based on slam prediction
+  void publish_slam_tf()
+  {
+    // Get odom state and make tf
+    std::vector<double> odom_state = diff_drive.return_state();
+    tf_odom_body = turtlelib::Transform2D{{odom_state[0], odom_state[1]}, odom_state[2]};
+
+    // Get tf_map_odom
+    tf_map_body = turtlelib::Transform2D{turtlelib::Vector2D{slam_state.at(1), slam_state.at(2)}, slam_state.at(0)};
+    tf_map_odom = tf_map_body * tf_odom_body.inv();
+
+    // Create tf message
+    geometry_msgs::msg::TransformStamped tf_map_odom_msg;
+    tf_map_odom_msg.header.stamp = get_clock()->now();
+    
+    // Fill out tf message
+    tf_map_odom_msg.transform.translation.x = tf_map_odom.translation().x;
+    tf_map_odom_msg.transform.translation.y = tf_map_odom.translation().y;
+    tf2::Quaternion quaternion;
+    quaternion.setRPY(0, 0, turtlelib::normalize_angle(Tmo.rotation()));
+    tf_map_odom_msg.transform.rotation.x = quaternion.x();
+    tf_map_odom_msg.transform.rotation.y = quaternion.y();
+    tf_map_odom_msg.transform.rotation.z = quaternion.z();
+    tf_map_odom_msg.transform.rotation.w = quaternion.w();
+
+    // Send tf_map_odom
+    tf_broadcaster_->sendTransform(tf_map_odom_msg);
   }
 
   /// \brief Callback for joint states messages
@@ -234,7 +297,7 @@ private:
     delta_y = slam_state.at(2) - slam_state_prev.at(2);
 
     // Create uncertainties matrix
-    arma::mat A_t(3 + 2 * max_obstacles, 3 + 2 * max_obstacles, arma::fill::zeros);
+    arma::mat A_t(3 + 2 * max_obs, 3 + 2 * max_obs, arma::fill::zeros);
     A_t.at(1, 0) = -delta_y;
     A_t.at(2, 0) = delta_x;
 
@@ -275,7 +338,39 @@ private:
   /// \brief Publishes position estimate of obstacles according to slam
   void publish_slam_obstacles()
   {
+    visualization_msgs::msg::MarkerArray obstacles;
 
+    for (size_t i = 0; i < max_obs; i++) {
+      // Create obstacle marker
+      visualization_msgs::msg::Marker obstacle;
+      obstacle.header.stamp = get_clock()->now();
+      obstacle.header.frame_id = "map";
+      obstacle.id = i;
+      obstacle.type = 3;  // cylinder
+      obstacle.action = 0;
+
+      // Set color
+      obstacle.color.r = 0.0;
+      obstacle.color.g = 1.0;
+      obstacle.color.b = 0.0;
+      obstacle.color.a = 1.0;
+
+      // Set radius and height
+      obstacle.scale.x = 2 * obstacles_radius;
+      obstacle.scale.y = 2 * obstacles_radius;
+      obstacle.scale.z = 0.25;
+
+      // Set obstacle location
+      obstacle.pose.position.x = slam_state.at((2 * i) + 3);
+      obstacle.pose.position.y = slam_state.at((2 * i) + 4);
+      obstacle.pose.position.z = 0.125;
+
+      // Add to marker array
+      obstacles.markers.push_back(obstacle);
+    }
+
+    // Publish obstacle markers
+    slam_obstacle_pub->publish(obstacles);
   }
 
 
