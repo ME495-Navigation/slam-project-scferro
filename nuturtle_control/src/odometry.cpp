@@ -88,8 +88,6 @@ public:
     loop_rate = 10;
     left_wheel_angle = 0.0;
     right_wheel_angle = 0.0;
-    left_wheel_speed = 0.0;
-    right_wheel_speed = 0.0;
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
 
     // Create diff_drive object
@@ -130,7 +128,7 @@ private:
   double motor_cmd_per_rad_sec;
   int encoder_ticks_per_rad;
   double collision_radius;
-  double left_wheel_angle, right_wheel_angle, left_wheel_speed, right_wheel_speed;
+  double left_wheel_angle, right_wheel_angle;
   std::string body_id, odom_id, wheel_left, wheel_right;
   int loop_rate;
   turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(1.0, 1.0);
@@ -230,8 +228,6 @@ private:
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width, x, y, theta);
     left_wheel_angle = 0.0;
     right_wheel_angle = 0.0;
-    left_wheel_speed = 0.0;
-    right_wheel_speed = 0.0;
   }
 
   /// \brief Updates the robot path with the current pose and publishes the path

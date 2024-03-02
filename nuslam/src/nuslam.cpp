@@ -25,6 +25,7 @@
 #include <random>
 #include <vector>
 #include <functional>
+#include <armadillo>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/u_int64.hpp"
@@ -80,10 +81,13 @@ public:
       throw std::runtime_error("Frame parameters not defined.");
     }
 
-    // Create diff_drive, initialize wheel speeds
+    // Create diff_drive, initialize wheel positions
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
-    right_wheel_vel = 0.;
-    left_wheel_vel = 0.;
+    left_wheel_angle = 0.;
+    right_wheel_angle = 0.;
+    tf_odom_body = turtlelib::Transform2D{{0.0, 0.0}, 0.0};
+    tf_map_odom = turtlelib::Transform2D{{0.0, 0.0}, 0.0};
+    tf_map_body = turtlelib::Transform2D{{0.0, 0.0}, 0.0};
 
     // Publishers
     odom_pub = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
@@ -117,6 +121,10 @@ private:
   bool use_lidar;
   nav_msgs::msg::Path slam_path;
   geometry_msgs::msg::PoseStamped slam_pose;
+  arma::mat Covariance, Q, R, Q_bar, myIdentity;
+  arma::vec slam_state, slam_state_prev;
+  double left_wheel_angle, right_wheel_angle;
+  turtlelib::Transform2D tf_odom_body, tf_map_odom, tf_map_body;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr path_timer;
@@ -127,16 +135,114 @@ private:
   rclcpp::Subscriber<sensor_msgs::msg::JointState>::SharedPtr joint_states_sub;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
 
-  /// @brief Callback for receiving obstacle position messages from the fake sensor
+  /// \brief Callback for receiving obstacle position messages from the fake sensor
   void fake_sensor_callback(const visualization_msgs::msg::MarkerArray & sensor)
   {
-
+    // Run prediction step
   }
 
-  /// @brief Callback for joint states messages
+  /// \brief Callback for joint states messages
   void joint_states_callback(const visualization_msgs::msg::MarkerArray & sensor)
   {
+    turtlelib::Transform2D body_tf;
+    turtlelib::Twist2D body_twist;
+    turtlelib::Vector2D position;
+    tf2::Quaternion quaternion;
+    std::vector<double> state;
 
+    // Extract new wheel data from message
+    left_wheel_angle = msg.position[0];
+    right_wheel_angle = msg.position[1];
+
+    body_twist = diff_drive.get_twist(left_wheel_angle, right_wheel_angle);
+    body_tf = diff_drive.update_state(left_wheel_angle, right_wheel_angle);
+    position = body_tf.translation();
+    quaternion.setRPY(0, 0, body_tf.rotation());
+
+    // Create odom message
+    nav_msgs::msg::Odometry odom_msg;
+    // Refer to Citation [3] ChatGPT
+    odom_msg.header.stamp = get_clock()->now();
+    odom_msg.header.frame_id = odom_id;
+    odom_msg.child_frame_id = body_id;
+
+    // Add pose to message
+    odom_msg.pose.pose.orientation.x = quaternion.x();
+    odom_msg.pose.pose.orientation.y = quaternion.y();
+    odom_msg.pose.pose.orientation.z = quaternion.z();
+    odom_msg.pose.pose.orientation.w = quaternion.w();
+    odom_msg.pose.pose.position.x = position.x;
+    odom_msg.pose.pose.position.y = position.y;
+
+    // Add Twist to message
+    odom_msg.twist.twist.linear.x = body_twist.x;
+    odom_msg.twist.twist.linear.y = body_twist.y;
+    odom_msg.twist.twist.angular.z = body_twist.omega;
+
+    // Publish odom_msg
+    odom_pub->publish(odom_msg);
+
+    // Get state
+    state = diff_drive.return_state();
+
+    // Publish transform from odom to base_link (same position)
+    geometry_msgs::msg::TransformStamped tf;
+    // Refer to Citation [3] ChatGPT
+    tf.header.stamp = get_clock()->now();
+    tf.header.frame_id = odom_id;
+    tf.child_frame_id = body_id;
+    tf.transform.translation.x = state[0];
+    tf.transform.translation.y = state[1];
+    tf.transform.translation.z = 0.0;
+
+    quaternion.setRPY(0, 0, state[2]);
+    tf.transform.rotation.x = quaternion.x();
+    tf.transform.rotation.y = quaternion.y();
+    tf.transform.rotation.z = quaternion.z();
+    tf.transform.rotation.w = quaternion.w();
+
+    tf_broadcaster->sendTransform(tf);
+  }
+
+  /// \brief Extended Kalman filter prediction step
+  void predict_ekf()
+  {
+    double delta_x, delta_y;
+
+    // Get odom state
+    std::vector<double> odom_state = diff_drive.return_state();
+
+    // Make a tf for the robot in the odom frame
+    tf_odom_body = turtlelib::Transform2D{{odom_state[0], odom_state[1]}, odom_state[2]};
+    
+    // get the robot position in the map frame
+    tf_map_body = tf_map_odom * tf_odom_body;
+    slam_state.at(0) = tf_map_body.rotation();
+    slam_state.at(1) = tf_map_body.translation().x;
+    slam_state.at(2) = tf_map_body.translation().y;
+
+    // Normalize angle
+    while slam_state.at(0) > 3.14159265 {
+      slam_state.at(0) += -2 * 3.14159265;
+    }
+    while slam_state.at(0) < -3.14159265 {
+      slam_state.at(0) += 2 * 3.14159265;
+    }
+    
+    // Calculate change in x and y positions
+    delta_x = slam_state.at(1) - slam_state_prev.at(1);
+    delta_y = slam_state.at(2) - slam_state_prev.at(2);
+
+    // Create uncertainties matrix
+    arma::mat A_t(3 + 2 * max_obstacles, 3 + 2 * max_obstacles, arma::fill::zeros);
+    A_t.at(1, 0) = -delta_y;
+    A_t.at(2, 0) = delta_x;
+
+    // Add identity matrix
+    A_t.diag() += 1.0;
+
+    // Update Covariance matrix with A_t
+    Covariance = (A_t * Covariance * A_t.t()) + Q_bar;
   }
 
   /// \brief Updates the path of the slam robot with the current pose and publishes the path
