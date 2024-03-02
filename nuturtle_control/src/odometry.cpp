@@ -77,7 +77,7 @@ public:
 
     // Check if parameters have been defined. if not, throw runtime error
     // Refer to Citation [2] ChatGPT
-    if (wheel_radius == -1.0 || wheel_radius == -1.0) {
+    if (wheel_radius == -1.0 || track_width == -1.0) {
       throw std::runtime_error("Diff drive parameters not defined.");
     }
     if (body_id == "" || wheel_left == "" || wheel_right == "") {

@@ -3,17 +3,6 @@
 ///
 /// PARAMETERS:
 ///     rate (double): frequency of the timer (Hz)
-///     x0 (double): initial x position of the turtlebot (m)
-///     y0 (double): initial y position of the turtlebot (m)
-///     theta0 (double): initial theta angle of the turtlebot (rad)
-///     obstacles_x (double[]): list of x coordinates of cylindrical obstacles (m)
-///     obstacles_y (double[]): list of y coordinates of cylindrical obstacles (m)
-///     obstacles_radius (double): radius of all cylindrical obstacles (m)
-///     arena_x_length (double): X length of rectangular arena (m)
-///     arena_y_length (double): Y length of rectangular arena (m)
-///     input_noise (double): the noise variance for moving the robot
-///     slip_fraction (double): defines how much the wheels slip
-///     max_range (double): maximum simulated lidar range
 /// SUBSCRIBES:
 ///     ~/red/wheel_cmd (nuturtlebot_msgs::msg::WheelCommands): the commands for the wheel motors
 /// PUBLISHES:
@@ -29,10 +18,6 @@
 ///     none
 /// BROADCASTS:
 ///    nusim/world -> red/base_footprint
-
-// Used ChatGPT for debugging
-// Refer to Citation [5] ChatGPT
-// Refer to Citation [6] ChatGPT
 
 #include <chrono>
 #include <memory>
@@ -65,87 +50,127 @@ public:
   : Node("nuslam")
   {
     // Parameters and default values
-    declare_parameter("rate", 200);
+    declare_parameter("rate", 2);
+    declare_parameter("body_id", "");
+    declare_parameter("odom", "odom");
+    declare_parameter("wheel_left", "");
+    declare_parameter("wheel_right", "");
+    declare_parameter("wheel_radius", -1.0);
+    declare_parameter("track_width", -1.0);
+    declare_parameter("max_obstacles", 5);
+    declare_parameter("obstacle_radius", 0.038);
 
     // Define parameter variables
     loop_rate = get_parameter("rate").as_int();
+    body_id = get_parameter("body_id").as_string();
+    odom_id = get_parameter("odom_id").as_string();
+    wheel_left = get_parameter("wheel_left").as_string();
+    wheel_right = get_parameter("wheel_right").as_string();
+    wheel_radius = get_parameter("wheel_radius").as_double();
+    track_width = get_parameter("track_width").as_double();
+    max_obstacles = get_parameter("max_obstacles").as_int();
+    obstacle_radius = get_parameter("obstacle_radius").as_double();
+
+    // Check if parameters have been defined. if not, throw runtime error
+    // Refer to Citation [2] ChatGPT
+    if (wheel_radius == -1.0 || track_width == -1.0) {
+      throw std::runtime_error("Diff drive parameters not defined.");
+    }
+    if (body_id == "" || wheel_left == "" || wheel_right == "") {
+      throw std::runtime_error("Frame parameters not defined.");
+    }
 
     // Create diff_drive, initialize wheel speeds
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
     right_wheel_vel = 0.;
     left_wheel_vel = 0.;
 
-    // Create noise and slip ranges
-    noise_range = std::normal_distribution<>{0, sqrt(input_noise)};
-    slip_range = std::uniform_real_distribution<>{-1.0 * slip_fraction, slip_fraction};
-    sensor_range = std::normal_distribution<>{0, sqrt(basic_sensor_variance)};
-    laser_range = std::normal_distribution<>{0, sqrt(laser_noise)};
-
     // Publishers
-    timestep_publisher = create_publisher<std_msgs::msg::UInt64>("~/timestep", 10);
-    obstacle_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/obstacles", 10);
-    walls_publisher = create_publisher<visualization_msgs::msg::MarkerArray>("~/walls", 10);
-    sensor_data_pub = create_publisher<nuturtlebot_msgs::msg::SensorData>("red/sensor_data", 10);
+    odom_pub = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+    slam_obstacle_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/slam_obstacles", 10);
     path_pub = create_publisher<nav_msgs::msg::Path>("red/path", 10);
-    fake_sensor_pub = create_publisher<visualization_msgs::msg::MarkerArray>("red/fake_sensor", 10);
-    laser_pub = create_publisher<sensor_msgs::msg::LaserScan>("scan", 10);
 
     // Subscribers
-    wheel_cmd_sub = create_subscription<nuturtlebot_msgs::msg::WheelCommands>(
-      "red/wheel_cmd",
-      10, std::bind(&Nuslam::wheel_cmd_callback, this, std::placeholders::_1));
-
-    // Transform broadcaster
-    tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
-
-    // Services
-    reset_server = create_service<std_srvs::srv::Empty>(
-      "~/reset",
-      std::bind(&Nuslam::reset_callback, this, std::placeholders::_1, std::placeholders::_2));
+    fake_sensor_sub = create_subscription<visualization_msgs::msg::MarkerArray>(
+      "red/fake_sensor",
+      10, std::bind(&Nuslam::fake_sensor_callback, this, std::placeholders::_1));
+    joint_states_sub = create_subscription<sensor_msgs::msg::JointState>(
+      "joint_states",
+      10, std::bind(&Nuslam::joint_states_callback, this, std::placeholders::_1));
 
     // Timers
     int cycle_time = 1000.0 / loop_rate;
-    main_timer = this->create_wall_timer(
+    path_timer = this->create_wall_timer(
       std::chrono::milliseconds(cycle_time),
-      std::bind(&Nuslam::timer_callback, this));
+      std::bind(&Nusim::update_path, this));
+
+    // Transform broadcaster
+    tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
   }
 
 private:
   // Initialize parameter variables
   int rate;
-  int timestep = 0;
-  double x0, y0, theta0;
-  double arena_x_length, arena_y_length;
-  double wheel_radius, track_width;
-  double right_wheel_vel, left_wheel_vel, motor_cmd_per_rad_sec;
-  turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
-  std::vector<double> obstacles_x, obstacles_y;
-  double obstacles_radius;
-  double x_gt, y_gt, theta_gt;
-  int encoder_ticks_per_rad, laser_samples;
-  int loop_rate, pose_rate, fake_sensor_rate;
-  double slip_fraction, input_noise, basic_sensor_variance, laser_noise;
-  double max_range, min_range;
-  double collision_radius;
-  nav_msgs::msg::Path nuslam_path;
-  geometry_msgs::msg::PoseStamped nuslam_pose;
-  std::normal_distribution<> noise_range, sensor_range, laser_range;
-  std::uniform_real_distribution<> slip_range;
-  bool draw_only;
+  int loop_rate, max_obstacles;
+  std::string body_id, odom_id, wheel_left, wheel_right;
+  double track_width, wheel_radius, obstacle_radius;
+  bool use_lidar;
+  nav_msgs::msg::Path slam_path;
+  geometry_msgs::msg::PoseStamped slam_pose;
 
   // Create ROS publishers, timers, broadcasters, etc.
-  rclcpp::TimerBase::SharedPtr main_timer;
-  rclcpp::TimerBase::SharedPtr fake_sensor_timer;
-  rclcpp::Publisher<std_msgs::msg::UInt64>::SharedPtr timestep_publisher;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstacle_publisher;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr walls_publisher;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr fake_sensor_pub;
-  rclcpp::Publisher<nuturtlebot_msgs::msg::SensorData>::SharedPtr sensor_data_pub;
-  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr laser_pub;
+  rclcpp::TimerBase::SharedPtr path_timer;
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr slam_obstacle_pub;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_server;
+  rclcpp::Subscriber<visualization_msgs::msg::MarkerArray>::SharedPtr fake_sensor_sub;
+  rclcpp::Subscriber<sensor_msgs::msg::JointState>::SharedPtr joint_states_sub;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
-  rclcpp::Subscription<nuturtlebot_msgs::msg::WheelCommands>::SharedPtr wheel_cmd_sub;
+
+  /// @brief Callback for receiving obstacle position messages from the fake sensor
+  void fake_sensor_callback(const visualization_msgs::msg::MarkerArray & sensor)
+  {
+
+  }
+
+  /// @brief Callback for joint states messages
+  void joint_states_callback(const visualization_msgs::msg::MarkerArray & sensor)
+  {
+
+  }
+
+  /// \brief Updates the path of the slam robot with the current pose and publishes the path
+  void update_path()
+  {
+    // Update ground truth red turtle path
+    slam_path.header.stamp = get_clock()->now();
+    slam_path.header.frame_id = "nusim/world";
+
+    // Create new pose stamped
+    slam_pose.header.stamp = get_clock()->now();
+    slam_pose.header.frame_id = "map";
+    slam_pose.pose.position.x = ;
+    slam_pose.pose.position.y = ;
+    slam_pose.pose.position.z = 0.0;
+
+    // Add rotation quaternion about Z
+    tf2::Quaternion quaternion;
+    quaternion.setRPY(0, 0, );
+    slam_pose.pose.orientation.x = quaternion.x();
+    slam_pose.pose.orientation.y = quaternion.y();
+    slam_pose.pose.orientation.z = quaternion.z();
+    slam_pose.pose.orientation.w = quaternion.w();
+
+    // Add pose to path and publish path
+    slam_path.poses.push_back(slam_pose);
+    path_pub->publish(slam_path);
+  }
+
+  /// \brief Publishes position estimate of obstacles according to slam
+  void publish_slam_obstacles()
+  {
+
+  }
 
 
 };
