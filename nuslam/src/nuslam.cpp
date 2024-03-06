@@ -41,6 +41,8 @@
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 
 using namespace std::chrono_literals;
 
@@ -92,12 +94,12 @@ public:
     // Create slam_state vectors. slam state vector includes robot x,y.theta and x,y for obstacles
     slam_state = arma::vec(max_obs * 2 + 3, arma::fill::zeros);
     slam_state_prev = arma::vec(max_obs * 2 + 3, arma::fill::zeros);
-    obstacle_initialized = std::vector<bool>(max_obstacles, false);
+    obstacle_initialized = std::vector<bool>(max_obs, false);
     Q = arma::mat(3, 3, arma::fill::zeros);
     Q.diag() += 1e-2;
-    R = arma::mat(2 * max_obstacles, 2 * max_obstacles, arma::fill::zeros);
+    R = arma::mat(2 * max_obs, 2 * max_obs, arma::fill::zeros);
     R.diag() += 1e-1;
-    Q_bar = arma::mat(max_obstacles * 2 + 3, max_obstacles * 2 + 3, arma::fill::zeros);
+    Q_bar = arma::mat(max_obs * 2 + 3, max_obs * 2 + 3, arma::fill::zeros);
     Q_bar.submat(0, 0, 2, 2) = Q;
 
     // Publishers
@@ -117,7 +119,7 @@ public:
     int cycle_time = 1000.0 / loop_rate;
     path_timer = this->create_wall_timer(
       std::chrono::milliseconds(cycle_time),
-      std::bind(&Nusim::update_path, this));
+      std::bind(&Nuslam::update_path, this));
 
     // Transform broadcaster
     tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -137,21 +139,22 @@ private:
   arma::vec slam_state, slam_state_prev;
   double left_wheel_angle, right_wheel_angle;
   turtlelib::Transform2D tf_odom_body, tf_map_odom, tf_map_body;
+  turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr path_timer;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr slam_obstacle_pub;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
-  rclcpp::Subscriber<visualization_msgs::msg::MarkerArray>::SharedPtr fake_sensor_sub;
-  rclcpp::Subscriber<sensor_msgs::msg::JointState>::SharedPtr joint_states_sub;
+  rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr fake_sensor_sub;
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_sub;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
 
   /// \brief Callback for receiving obstacle position messages from the fake sensor
   void fake_sensor_callback(const visualization_msgs::msg::MarkerArray & msg)
   {    
     // Run prediction step
-    predict_ekf();
+    predict_ekf(msg);
 
     // Publish slam tf
     publish_slam_tf();
@@ -180,8 +183,8 @@ private:
     // Create tf message
     geometry_msgs::msg::TransformStamped tf_map_odom_msg;
     tf_map_odom_msg.header.stamp = get_clock()->now();
-      tf_base.header.frame_id = "map";
-      tf_base.child_frame_id = "odom";
+    tf_map_odom_msg.header.frame_id = "map";
+    tf_map_odom_msg.child_frame_id = "odom";
     
     // Fill out tf message
     tf_map_odom_msg.transform.translation.x = tf_map_odom.translation().x;
@@ -198,7 +201,7 @@ private:
   }
 
   /// \brief Callback for joint states messages
-  void joint_states_callback(const visualization_msgs::msg::MarkerArray & sensor)
+  void joint_states_callback(const sensor_msgs::msg::JointState & msg)
   {
     turtlelib::Transform2D body_tf;
     turtlelib::Twist2D body_twist;
@@ -261,12 +264,12 @@ private:
   }
 
   /// \brief Extended Kalman filter prediction step
-  void predict_ekf()
+  void predict_ekf(const visualization_msgs::msg::MarkerArray & msg)
   {
-    auto delta_x, delta_y;
-    auto marker_x, marker_y, r_j, phi_j;
-    auto dx_j_hat, dy_j_hat, d_j_hat, r_j_hat, phi_j_hat;
-    arma::mat H_j(2, 3 + 2 * max_obstacles, arma::fill::zeros);
+    double delta_x, delta_y;
+    double marker_x, marker_y, r_j, phi_j;
+    double dx_j_hat, dy_j_hat, d_j_hat, r_j_hat, phi_j_hat;
+    arma::mat H_j(2, 3 + 2 * max_obs, arma::fill::zeros);
     arma::vec z_j_hat(2, arma::fill::zeros);
 
     // Get odom state
@@ -362,8 +365,13 @@ private:
         slam_state = slam_state + K_i * dz_j;
         slam_state.at(0) = normalize_angle(slam_state.at(0));
 
+
         // Update covariance based on marker
-        Covariance = (myIdentity - K_i * H_j) * Covariance;
+        int size = (max_obs * 2) + 3;
+        // arma::mat identity = arma::eye(size, size);
+        arma::mat identity = arma::mat(size, size, arma::fill::zeros);
+        identity.diag() += 1.0;
+        Covariance = (identity - K_i * H_j) * Covariance;
       }
     }
   }
@@ -371,10 +379,10 @@ private:
   /// \brief Normalizes angles to range -pi to pi
   double normalize_angle(double angle)
   {
-    while (angle) > 3.14159265 {
+    while (angle > 3.14159265) {
       angle += -2 * 3.14159265;
     }
-    while (angle) < -3.14159265 {
+    while (angle < -3.14159265) {
       angle += 2 * 3.14159265;
     }
 
@@ -391,13 +399,13 @@ private:
     // Create new pose stamped
     slam_pose.header.stamp = get_clock()->now();
     slam_pose.header.frame_id = "map";
-    slam_pose.pose.position.x = ;
-    slam_pose.pose.position.y = ;
+    slam_pose.pose.position.x = slam_state.at(1);
+    slam_pose.pose.position.y = slam_state.at(2);
     slam_pose.pose.position.z = 0.0;
 
     // Add rotation quaternion about Z
     tf2::Quaternion quaternion;
-    quaternion.setRPY(0, 0, );
+    quaternion.setRPY(0, 0, slam_state.at(0));
     slam_pose.pose.orientation.x = quaternion.x();
     slam_pose.pose.orientation.y = quaternion.y();
     slam_pose.pose.orientation.z = quaternion.z();
@@ -413,7 +421,7 @@ private:
   {
     visualization_msgs::msg::MarkerArray obstacles;
 
-    for (size_t i = 0; i < max_obs; i++) {
+    for (int i = 0; i < max_obs; i++) {
       // Create obstacle marker
       visualization_msgs::msg::Marker obstacle;
       obstacle.header.stamp = get_clock()->now();
@@ -429,8 +437,8 @@ private:
       obstacle.color.a = 1.0;
 
       // Set radius and height
-      obstacle.scale.x = 2 * obstacles_radius;
-      obstacle.scale.y = 2 * obstacles_radius;
+      obstacle.scale.x = 2 * obstacle_radius;
+      obstacle.scale.y = 2 * obstacle_radius;
       obstacle.scale.z = 0.25;
 
       // Set obstacle location

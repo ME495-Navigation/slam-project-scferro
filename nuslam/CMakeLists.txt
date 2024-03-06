@@ -41,7 +41,7 @@ if(BUILD_TESTING)
 endif()
 
 add_executable(nuslam src/nuslam.cpp)
-ament_target_dependencies(nuslam rclcpp std_msgs geometry_msgs sensor_msgs std_srvs tf2 tf2_ros visualization_msgs nuturtlebot_msgs nav_msgs)
+ament_target_dependencies(nuslam rclcpp std_msgs geometry_msgs sensor_msgs std_srvs tf2 tf2_ros visualization_msgs nuturtlebot_msgs nav_msgs Armadillo)
 target_link_libraries(nuslam turtlelib::turtlelib "${cpp_typesupport_target}")
 
 
