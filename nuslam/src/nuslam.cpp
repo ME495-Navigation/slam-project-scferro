@@ -368,9 +368,7 @@ private:
 
         // Update covariance based on marker
         int size = (max_obs * 2) + 3;
-        // arma::mat identity = arma::eye(size, size);
-        arma::mat identity = arma::mat(size, size, arma::fill::zeros);
-        identity.diag() += 1.0;
+        arma::mat identity = arma::eye(size, size);
         Covariance = (identity - K_i * H_j) * Covariance;
       }
     }
