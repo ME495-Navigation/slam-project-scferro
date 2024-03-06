@@ -92,6 +92,13 @@ public:
     // Create slam_state vectors. slam state vector includes robot x,y.theta and x,y for obstacles
     slam_state = arma::vec(max_obs * 2 + 3, arma::fill::zeros);
     slam_state_prev = arma::vec(max_obs * 2 + 3, arma::fill::zeros);
+    obstacle_initialized = std::vector<bool>(max_obstacles, false);
+    Q = arma::mat(3, 3, arma::fill::zeros);
+    Q.diag() += 1e-2;
+    R = arma::mat(2 * max_obstacles, 2 * max_obstacles, arma::fill::zeros);
+    R.diag() += 1e-1;
+    Q_bar = arma::mat(max_obstacles * 2 + 3, max_obstacles * 2 + 3, arma::fill::zeros);
+    Q_bar.submat(0, 0, 2, 2) = Q;
 
     // Publishers
     odom_pub = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
@@ -125,7 +132,8 @@ private:
   bool use_lidar;
   nav_msgs::msg::Path slam_path;
   geometry_msgs::msg::PoseStamped slam_pose;
-  arma::mat Covariance, Q, R, Q_bar, myIdentity;
+  std::vector<bool> obstacle_initialized;
+  arma::mat Covariance, Q, R, Q_bar;
   arma::vec slam_state, slam_state_prev;
   double left_wheel_angle, right_wheel_angle;
   turtlelib::Transform2D tf_odom_body, tf_map_odom, tf_map_body;
@@ -141,26 +149,9 @@ private:
 
   /// \brief Callback for receiving obstacle position messages from the fake sensor
   void fake_sensor_callback(const visualization_msgs::msg::MarkerArray & msg)
-  {
+  {    
     // Run prediction step
     predict_ekf();
-
-    // Add marker positions to measurement 
-    for (size_t i = 0; i < msg.markers.size(); i++) {
-      // extract coordinates, id, and action from message
-      double mx = msg.markers.at(i).pose.position.x;
-      double my = msg.markers.at(i).pose.position.y;
-      int id = msg.markers.at(i).id;
-      int act = msg.markers.at(i).action;
-
-      if (act == 2) {
-        // Obstacle is out of range. Skip this loop iteration!
-        continue;
-      } else {
-        // incorporate the measurement into ekf algorithm if obstacle in range
-        
-      }
-    }
 
     // Publish slam tf
     publish_slam_tf();
@@ -189,19 +180,21 @@ private:
     // Create tf message
     geometry_msgs::msg::TransformStamped tf_map_odom_msg;
     tf_map_odom_msg.header.stamp = get_clock()->now();
+      tf_base.header.frame_id = "map";
+      tf_base.child_frame_id = "odom";
     
     // Fill out tf message
     tf_map_odom_msg.transform.translation.x = tf_map_odom.translation().x;
     tf_map_odom_msg.transform.translation.y = tf_map_odom.translation().y;
     tf2::Quaternion quaternion;
-    quaternion.setRPY(0, 0, turtlelib::normalize_angle(Tmo.rotation()));
+    quaternion.setRPY(0, 0, normalize_angle(tf_map_odom.rotation()));
     tf_map_odom_msg.transform.rotation.x = quaternion.x();
     tf_map_odom_msg.transform.rotation.y = quaternion.y();
     tf_map_odom_msg.transform.rotation.z = quaternion.z();
     tf_map_odom_msg.transform.rotation.w = quaternion.w();
 
     // Send tf_map_odom
-    tf_broadcaster_->sendTransform(tf_map_odom_msg);
+    tf_broadcaster->sendTransform(tf_map_odom_msg);
   }
 
   /// \brief Callback for joint states messages
@@ -270,7 +263,11 @@ private:
   /// \brief Extended Kalman filter prediction step
   void predict_ekf()
   {
-    double delta_x, delta_y;
+    auto delta_x, delta_y;
+    auto marker_x, marker_y, r_j, phi_j;
+    auto dx_j_hat, dy_j_hat, d_j_hat, r_j_hat, phi_j_hat;
+    arma::mat H_j(2, 3 + 2 * max_obstacles, arma::fill::zeros);
+    arma::vec z_j_hat(2, arma::fill::zeros);
 
     // Get odom state
     std::vector<double> odom_state = diff_drive.return_state();
@@ -280,17 +277,9 @@ private:
     
     // get the robot position in the map frame
     tf_map_body = tf_map_odom * tf_odom_body;
-    slam_state.at(0) = tf_map_body.rotation();
+    slam_state.at(0) = normalize_angle(tf_map_body.rotation());
     slam_state.at(1) = tf_map_body.translation().x;
     slam_state.at(2) = tf_map_body.translation().y;
-
-    // Normalize angle
-    while slam_state.at(0) > 3.14159265 {
-      slam_state.at(0) += -2 * 3.14159265;
-    }
-    while slam_state.at(0) < -3.14159265 {
-      slam_state.at(0) += 2 * 3.14159265;
-    }
     
     // Calculate change in x and y positions
     delta_x = slam_state.at(1) - slam_state_prev.at(1);
@@ -306,6 +295,90 @@ private:
 
     // Update Covariance matrix with A_t
     Covariance = (A_t * Covariance * A_t.t()) + Q_bar;
+
+    // Add marker positions to measurement 
+    for (size_t i = 0; i < msg.markers.size(); i++) {
+      // extract coordinates, id, and action from message
+      marker_x = msg.markers.at(i).pose.position.x;
+      marker_y = msg.markers.at(i).pose.position.y;
+      int id = msg.markers.at(i).id;
+      int act = msg.markers.at(i).action;
+
+      if (act == 2) {
+        // Obstacle is out of range
+        continue;
+      } else {
+        // Convert current x and y to polar coordinates
+        r_j = sqrt(pow(marker_x, 2) + pow(marker_y, 2));
+        phi_j = atan2(marker_x, marker_y);
+
+        // Create vector with radius and angle
+        arma::vec z_j(2, arma::fill::zeros);
+        z_j.at(0) = r_j;
+        z_j.at(1) = phi_j;
+
+        // check if this obstacle has been initialized
+        if (!obstacle_initialized.at(id)) {
+          // initialize x coordinate
+          slam_state.at((2 * id) + 3) = slam_state.at(1) + r_j *
+            cos(normalize_angle(phi_j + slam_state.at(0)));
+          // initialize y coordinate
+          slam_state.at((2 * id) + 4) = slam_state.at(2) + r_j *
+            sin(normalize_angle(phi_j + slam_state.at(0)));
+
+          // Mark obstacle as initialized
+          obstacle_initialized.at(id) = true;
+        }
+
+        // Find estimated state Z_bar
+        dx_j_hat = slam_state.at(3 + (2 * id)) - slam_state.at(1);
+        dy_j_hat = slam_state.at(3 + (2 * id) + 1) - slam_state.at(2);
+        d_j_hat = dx_j_hat * dx_j_hat + dy_j_hat * dy_j_hat;
+        r_j_hat = sqrt(d_j_hat);
+        phi_j_hat = normalize_angle(atan2(dy_j_hat, dx_j_hat) - slam_state.at(0));
+        z_j_hat.at(0) = r_j_hat;
+        z_j_hat.at(1) = phi_j_hat;
+
+        // Create H_j from predicted state
+        H_j.at(1, 0) = -1.0;
+        H_j.at(0, 1) = -dx_j_hat / r_j_hat;
+        H_j.at(1, 1) = dy_j_hat / d_j_hat;
+        H_j.at(0, 2) = -dy_j_hat / r_j_hat;
+        H_j.at(1, 2) = -dx_j_hat / d_j_hat;
+        H_j.at(0, 3 + (2 * id)) = dx_j_hat / r_j_hat;
+        H_j.at(1, 3 + (2 * id)) = -dy_j_hat / d_j_hat;
+        H_j.at(0, 4 + (2 * id)) = dy_j_hat / r_j_hat;
+        H_j.at(1, 4 + (2 * id)) = dx_j_hat / d_j_hat;
+
+        // Find kalman gain K_i
+        arma::mat R_i = R.submat((2 * id), (2 * id), (2 * id) + 1, (2 * id) + 1);
+        arma::mat K_i_sub = H_j * Covariance * H_j.t() + R_i;
+        arma::mat K_i = Covariance * H_j.t() * K_i_sub.i();
+
+        // Update state
+        arma::vec dz_j = z_j - z_j_hat;
+        dz_j.at(1) = normalize_angle(dz_j.at(1));
+        
+        slam_state = slam_state + K_i * dz_j;
+        slam_state.at(0) = normalize_angle(slam_state.at(0));
+
+        // Update covariance based on marker
+        Covariance = (myIdentity - K_i * H_j) * Covariance;
+      }
+    }
+  }
+
+  /// \brief Normalizes angles to range -pi to pi
+  double normalize_angle(double angle)
+  {
+    while (angle) > 3.14159265 {
+      angle += -2 * 3.14159265;
+    }
+    while (angle) < -3.14159265 {
+      angle += 2 * 3.14159265;
+    }
+
+    return angle;
   }
 
   /// \brief Updates the path of the slam robot with the current pose and publishes the path
@@ -372,8 +445,6 @@ private:
     // Publish obstacle markers
     slam_obstacle_pub->publish(obstacles);
   }
-
-
 };
 
 int main(int argc, char ** argv)

@@ -24,7 +24,7 @@
         <arg name="use_jsp" value="true"/>
     </include>
 
-    <!-- Publish a static TF between the odom and world frames-->
+    <!-- Publish a static TF between the world and map frames-->
     <node pkg="tf2_ros"
         if="$(eval '\'$(var robot)\' != \'none\'')"
         exec="static_transform_publisher"
