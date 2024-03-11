@@ -11,10 +11,10 @@
 namespace turtlelib {
 
     DiffDrive::DiffDrive(double radius, double track)
-    : phi_right(0.0), phi_left(0.0), x_robot(0.0), y_robot(0.0), theta_robot(0.0), track_width(track), wheel_radius(radius) {}
+    : phi_right(0.0), phi_left(0.0), x_robot(0.0), y_robot(0.0), theta_robot(0.0), track_width(track), wheel_diameter(radius) {}
 
     DiffDrive::DiffDrive(double radius, double track, double x_pos, double y_pos, double theta)
-    : phi_right(0.0), phi_left(0.0), x_robot(x_pos), y_robot(y_pos), theta_robot(theta), track_width(track), wheel_radius(radius) {}
+    : phi_right(0.0), phi_left(0.0), x_robot(x_pos), y_robot(y_pos), theta_robot(theta), track_width(track), wheel_diameter(radius) {}
 
     Transform2D DiffDrive::update_state(double new_phi_left, double new_phi_right) {
         // Refer to Citation [2] ChatGPT
@@ -38,8 +38,8 @@ namespace turtlelib {
         // Refer to Citation [2] ChatGPT
         Twist2D twist;
         // create twist, assume change in wheel position happens over unit time
-        twist.x = wheel_radius * ((new_phi_right - phi_right) + (new_phi_left - phi_left)) / 4;
-        twist.omega = wheel_radius * ((new_phi_right - phi_right) - (new_phi_left - phi_left)) / (2 * track_width);
+        twist.x = wheel_diameter * ((new_phi_right - phi_right) + (new_phi_left - phi_left)) / 4;
+        twist.omega = wheel_diameter * ((new_phi_right - phi_right) - (new_phi_left - phi_left)) / (2 * track_width);
         return twist;
     }
 
@@ -47,10 +47,8 @@ namespace turtlelib {
         // Refer to Citation [2] ChatGPT
         if (twist.y==0.0) {
             double vel_left, vel_right;
-            double wheel_circumference;
-            wheel_circumference = wheel_radius * PI;
-            vel_left = (twist.x / wheel_circumference) - ((track_width * twist.omega) / (2 * wheel_circumference));
-            vel_right = (twist.x / wheel_circumference) + ((track_width * twist.omega) / (2 * wheel_circumference));
+            vel_left = (twist.x - ((track_width / 2) * twist.omega)) / (wheel_diameter / 2);
+            vel_right = (twist.x + ((track_width / 2) * twist.omega)) / (wheel_diameter / 2);
             return {vel_left, vel_right};   
         } else {
             throw std::logic_error("The y velocity of the twist must be equal to 0.0.");

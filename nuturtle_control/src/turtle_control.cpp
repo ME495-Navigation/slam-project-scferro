@@ -2,7 +2,7 @@
 /// \brief Controls the turtlebot
 ///
 /// PARAMETERS:
-///     wheel_radius (double): radius of the wheels (m)
+///     wheel_diameter (double): radius of the wheels (m)
 ///     track_width (double): track width of the wheels (m)
 ///     motor_cmd_max (int): max mcu command for the motor
 ///     motor_cmd_per_rad_sec (double): the angular wheel speed per mcu (radians)
@@ -44,7 +44,7 @@ public:
   : Node("turtle_control")
   {
     // Parameters and default values
-    declare_parameter("wheel_radius", -1.0);
+    declare_parameter("wheel_diameter", -1.0);
     declare_parameter("track_width", -1.0);
     declare_parameter("motor_cmd_max", 1);
     declare_parameter("motor_cmd_per_rad_sec", 1.0);
@@ -52,7 +52,7 @@ public:
     declare_parameter("collision_radius", 1.0);
 
     // Define parameter variables
-    wheel_radius = get_parameter("wheel_radius").as_double();
+    wheel_diameter = get_parameter("wheel_diameter").as_double();
     track_width = get_parameter("track_width").as_double();
     motor_cmd_max = get_parameter("motor_cmd_max").as_int();
     motor_cmd_per_rad_sec = get_parameter("motor_cmd_per_rad_sec").as_double();
@@ -61,7 +61,7 @@ public:
 
     // Check if parameters have been defined. if not, throw runtime error
     // Refer to Citation [2] ChatGPT
-    if (wheel_radius == -1.0 || track_width == -1.0) {
+    if (wheel_diameter == -1.0 || track_width == -1.0) {
       throw std::runtime_error("Diff drive parameters not defined.");
     }
 
@@ -100,7 +100,7 @@ public:
 private:
   // Initialize parameter variables
   int rate;
-  double wheel_radius, track_width;
+  double wheel_diameter, track_width;
   int motor_cmd_max;
   double motor_cmd_per_rad_sec, encoder_ticks_per_rad, collision_radius;
   std::vector<double> target_wheel_speeds = {0.0, 0.0};
@@ -128,7 +128,7 @@ private:
     turtlelib::Twist2D twist;
 
     // Create DiffDrive object
-    turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
+    turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_diameter, track_width);
 
     // Extract forward and angular velocities from twist
     twist.x = msg.linear.x;
@@ -152,7 +152,7 @@ private:
     // Enter wheel commands into message
     wheel_commands.left_velocity = limit_cmd(wheel_cmd_left);
     wheel_commands.right_velocity = limit_cmd(wheel_cmd_right);
-
+    
     // Update wheel_speed_error_prev
     wheel_speed_error_left_prev = wheel_speed_error_left;
     wheel_speed_error_right_prev = wheel_speed_error_right;

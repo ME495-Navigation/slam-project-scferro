@@ -7,7 +7,7 @@
 
 <xacro:property name="yaml_file" value="$(find nuturtle_description)/config/diff_params.yaml" />
 <xacro:property name="config" value="${xacro.load_yaml(yaml_file)['/**']['ros__parameters']}" />
-<xacro:property name="wheel_radius"  value="${config['wheel_radius']}" />
+<xacro:property name="wheel_diameter"  value="${config['wheel_diameter']}" />
 <xacro:property name="track_width"  value="${config['track_width']}" />
 <xacro:property name="motor_cmd_max"  value="${config['motor_cmd_max']}" />
 <xacro:property name="motor_cmd_per_rad_sec"  value="${config['motor_cmd_per_rad_sec']}" />
@@ -86,7 +86,7 @@
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <cylinder length="0.018" radius="${wheel_radius/2}"/>
+        <cylinder length="0.018" radius="${wheel_diameter/2}"/>
       </geometry>
     </collision>
 
@@ -118,7 +118,7 @@
     <collision>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <geometry>
-        <cylinder length="0.018" radius="${wheel_radius/2}"/>
+        <cylinder length="0.018" radius="${wheel_diameter/2}"/>
       </geometry>
     </collision>
 

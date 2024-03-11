@@ -28,15 +28,15 @@ namespace turtlelib
         /// \brief the distance between the wheel centerlines
         double track_width;
         /// \brief the radius of the wheels
-        double wheel_radius;
+        double wheel_diameter;
     public:
         /// \brief create a new object at the origin and set parameters
-        /// \param wheel_radius the radii of the wheels
+        /// \param wheel_diameter the radii of the wheels
         /// \param track_width distance between the centerlines of the two wheels
         explicit DiffDrive(double radius, double track);
 
         /// \brief create a new object at a specified position and set parameters
-        /// \param wheel_radius the radii of the wheels
+        /// \param wheel_diameter the radii of the wheels
         /// \param track_width distance between the centerlines of the two wheels
         explicit DiffDrive(double radius, double track, double x_pos, double y_pos, double theta);
 

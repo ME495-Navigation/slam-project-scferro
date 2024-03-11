@@ -4,6 +4,7 @@
     <arg name="robot" default="nusim"/>
     <arg name="use_rviz" default="true"/>
     <arg name="world_config_file" default="basic_world.yaml"/>
+    <arg name="odom_frame" default="odom"/>
 
     <!-- Launch rviz node if use_rviz==true and robot==localhost -->
     <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nuturtle_control)/config/nuturtle_control_nusim.rviz" if="$(eval '\'$(var use_rviz)\' == \'true\' and \'$(var robot)\' == \'nusim\'')"/>
@@ -51,6 +52,7 @@
     <node pkg="nuturtle_control" exec="odometry" if="$(eval '\'$(var robot)\' != \'localhost\'')">
         <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
         <param name="body_id" value="blue/base_footprint" />
+        <param name="odom_id" value="$(var odom_frame)" />
         <param name="wheel_left" value="blue/wheel_left_link" />
         <param name="wheel_right" value="blue/wheel_right_link" />
     </node>

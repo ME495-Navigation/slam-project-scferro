@@ -6,7 +6,7 @@
 ///     odom_id (string): the name of the odometry frame
 ///     wheel_left (string): the name of the robot left wheel frame
 ///     wheel_right (string): the name of the robot right wheel frame
-///     wheel_radius (double): diameter of the wheels (m)
+///     wheel_diameter (double): diameter of the wheels (m)
 ///     track_width (double): track width of the wheels (m)
 ///     motor_cmd_max (int): max mcu command for the motor
 ///     motor_cmd_per_rad_sec (double): the angular wheel speed per mcu (radians)
@@ -56,7 +56,7 @@ public:
     declare_parameter("odom_id", "odom");
     declare_parameter("wheel_left", "");
     declare_parameter("wheel_right", "");
-    declare_parameter("wheel_radius", -1.0);
+    declare_parameter("wheel_diameter", -1.0);
     declare_parameter("track_width", -1.0);
     declare_parameter("motor_cmd_max", 1);
     declare_parameter("motor_cmd_per_rad_sec", 1.0);
@@ -68,7 +68,7 @@ public:
     odom_id = get_parameter("odom_id").as_string();
     wheel_left = get_parameter("wheel_left").as_string();
     wheel_right = get_parameter("wheel_right").as_string();
-    wheel_radius = get_parameter("wheel_radius").as_double();
+    wheel_diameter = get_parameter("wheel_diameter").as_double();
     track_width = get_parameter("track_width").as_double();
     motor_cmd_max = get_parameter("motor_cmd_max").as_int();
     motor_cmd_per_rad_sec = get_parameter("motor_cmd_per_rad_sec").as_double();
@@ -77,7 +77,7 @@ public:
 
     // Check if parameters have been defined. if not, throw runtime error
     // Refer to Citation [2] ChatGPT
-    if (wheel_radius == -1.0 || track_width == -1.0) {
+    if (wheel_diameter == -1.0 || track_width == -1.0) {
       throw std::runtime_error("Diff drive parameters not defined.");
     }
     if (body_id == "" || wheel_left == "" || wheel_right == "") {
@@ -88,10 +88,10 @@ public:
     loop_rate = 10;
     left_wheel_angle = 0.0;
     right_wheel_angle = 0.0;
-    diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
+    diff_drive = turtlelib::DiffDrive(wheel_diameter, track_width);
 
     // Create diff_drive object
-    diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
+    diff_drive = turtlelib::DiffDrive(wheel_diameter, track_width);
 
     // Transform broadcaster
     tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -122,7 +122,7 @@ public:
 private:
   // Initialize parameter variables
   int rate;
-  double wheel_radius;
+  double wheel_diameter;
   double track_width;
   int motor_cmd_max;
   double motor_cmd_per_rad_sec;
@@ -225,7 +225,7 @@ private:
     double theta = request->theta;
 
     // Update diff_drive with new DiffDrive object at specified position
-    diff_drive = turtlelib::DiffDrive(wheel_radius, track_width, x, y, theta);
+    diff_drive = turtlelib::DiffDrive(wheel_diameter, track_width, x, y, theta);
     left_wheel_angle = 0.0;
     right_wheel_angle = 0.0;
   }

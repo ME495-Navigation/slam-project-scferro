@@ -10,7 +10,7 @@
 ///     ~/obstacles (visualization_msgs::msg::MarkerArray): marker objects representing cylinders
 ///     ~/walls (visualization_msgs::msg::MarkerArray): marker objects representing walls of arena
 ///     red/sensor_data (nuturtlebot_msgs::msg::SensorData): encoder data for the simulated robot
-///     red/path (nav_msgs::msg::Path): the path of the nusim robot
+///     green/path (nav_msgs::msg::Path): the path of the nusim robot
 /// SERVERS:
 ///     ~/reset (std_srvs::srv::Empty): resets the simulation to the initial state
 ///     ~/teleport (nusim::srv::Teleport): teleports the turtle to a specified x, y, theta value
@@ -58,7 +58,7 @@ public:
     declare_parameter("odom", "odom");
     declare_parameter("wheel_left", "");
     declare_parameter("wheel_right", "");
-    declare_parameter("wheel_radius", -1.0);
+    declare_parameter("wheel_diameter", -1.0);
     declare_parameter("track_width", -1.0);
     declare_parameter("max_obs", 5);
     declare_parameter("obstacle_radius", 0.038);
@@ -69,14 +69,14 @@ public:
     odom_id = get_parameter("odom_id").as_string();
     wheel_left = get_parameter("wheel_left").as_string();
     wheel_right = get_parameter("wheel_right").as_string();
-    wheel_radius = get_parameter("wheel_radius").as_double();
+    wheel_diameter = get_parameter("wheel_diameter").as_double();
     track_width = get_parameter("track_width").as_double();
     max_obs = get_parameter("max_obs").as_int();
     obstacle_radius = get_parameter("obstacle_radius").as_double();
 
     // Check if parameters have been defined. if not, throw runtime error
     // Refer to Citation [2] ChatGPT
-    if (wheel_radius == -1.0 || track_width == -1.0) {
+    if (wheel_diameter == -1.0 || track_width == -1.0) {
       throw std::runtime_error("Diff drive parameters not defined.");
     }
     if (body_id == "" || wheel_left == "" || wheel_right == "") {
@@ -84,7 +84,7 @@ public:
     }
 
     // Create diff_drive, initialize wheel positions
-    diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
+    diff_drive = turtlelib::DiffDrive(wheel_diameter, track_width);
     left_wheel_angle = 0.;
     right_wheel_angle = 0.;
     tf_odom_body = turtlelib::Transform2D{{0.0, 0.0}, 0.0};
@@ -103,9 +103,9 @@ public:
     Q_bar.submat(0, 0, 2, 2) = Q;
 
     // Publishers
-    odom_pub = create_publisher<nav_msgs::msg::Odometry>("odom", 10);
+    odom_pub = create_publisher<nav_msgs::msg::Odometry>("green/odom", 10);
     slam_obstacle_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/slam_obstacles", 10);
-    path_pub = create_publisher<nav_msgs::msg::Path>("red/path", 10);
+    path_pub = create_publisher<nav_msgs::msg::Path>("green/path", 10);
 
     // Subscribers
     fake_sensor_sub = create_subscription<visualization_msgs::msg::MarkerArray>(
@@ -130,7 +130,7 @@ private:
   int rate;
   int loop_rate, max_obs;
   std::string body_id, odom_id, wheel_left, wheel_right;
-  double track_width, wheel_radius, obstacle_radius;
+  double track_width, wheel_diameter, obstacle_radius;
   bool use_lidar;
   nav_msgs::msg::Path slam_path;
   geometry_msgs::msg::PoseStamped slam_pose;
@@ -139,7 +139,7 @@ private:
   arma::vec slam_state, slam_state_prev;
   double left_wheel_angle, right_wheel_angle;
   turtlelib::Transform2D tf_odom_body, tf_map_odom, tf_map_body;
-  turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
+  turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_diameter, track_width);
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr path_timer;

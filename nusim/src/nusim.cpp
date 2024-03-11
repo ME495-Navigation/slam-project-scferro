@@ -82,7 +82,7 @@ public:
     declare_parameter("track_width", 0.160);
     declare_parameter("pose_rate", 1);
     declare_parameter("input_noise", 1.0);
-    declare_parameter("slip_fraction", 0.05);
+    declare_parameter("slip_fraction", 0.2);
     declare_parameter("max_range", 3.5);
     declare_parameter("min_range", 0.12);
     declare_parameter("basic_sensor_variance", 0.01);
@@ -121,6 +121,7 @@ public:
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
     right_wheel_vel = 0.;
     left_wheel_vel = 0.;
+    wheel_angles_no_slip = {0.,0.};
 
     // Create noise and slip ranges
     noise_range = std::normal_distribution<>{0, sqrt(input_noise)};
@@ -186,6 +187,7 @@ private:
   std::normal_distribution<> noise_range, sensor_range, laser_range;
   std::uniform_real_distribution<> slip_range;
   bool draw_only;
+  std::vector<double> wheel_angles_no_slip;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr main_timer;
@@ -212,7 +214,7 @@ private:
       double delta_left_wheel, delta_right_wheel;
       std::vector<double> wheel_angles, state;
       turtlelib::Transform2D body_tf;
-      double left_wheel_angle_slip, right_wheel_angle_slip;
+      double left_wheel_angle, right_wheel_angle;
 
       // Add the timestep to the message
       message.data = timestep;
@@ -235,11 +237,14 @@ private:
 
       // Find wheel angles adjusted with slip
       wheel_angles = diff_drive.return_wheels();
-      left_wheel_angle_slip = wheel_angles[0] + (delta_left_wheel * (1 + slip_range(get_random())));
-      right_wheel_angle_slip = wheel_angles[1] + (delta_right_wheel * (1 + slip_range(get_random())));
+      left_wheel_angle = wheel_angles[0] + (delta_left_wheel * (1 + slip_range(get_random())));
+      right_wheel_angle = wheel_angles[1] + (delta_right_wheel * (1 + slip_range(get_random())));
+
+      wheel_angles_no_slip[0] += delta_left_wheel;
+      wheel_angles_no_slip[1] += delta_right_wheel;
 
       // Update diff_drive state
-      body_tf = diff_drive.update_state(left_wheel_angle_slip, right_wheel_angle_slip);
+      body_tf = diff_drive.update_state(left_wheel_angle, right_wheel_angle);
       state = diff_drive.return_state();
       x_gt = state[0];
       y_gt = state[1];
@@ -266,8 +271,8 @@ private:
       // Publish transforms
       tf_broadcaster->sendTransform(tf_base);
 
-      // Publish sensor data
-      publish_sensor_data(wheel_angles[0], wheel_angles[1]);
+      // Update and publish sensor data
+      publish_sensor_data(wheel_angles_no_slip[0], wheel_angles_no_slip[1]);
 
       // Add current pose to path and publish path
       if ((timestep % (loop_rate / pose_rate))==0) {

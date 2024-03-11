@@ -3,16 +3,16 @@
     <arg name="cmd_src" default="teleop"/>
     <arg name="robot" default="nusim"/>
     <arg name="use_rviz" default="true"/>
-    <arg name="use_lidar" default="false"/>
 
     <!-- Launch rviz -->
-     <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nusim)/config/nusim.rviz" if="$(eval '\'$(var robot)\' == \'nusim\' and \'$(var use_rviz)\' == \'true\'')"/>
+     <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nuslam)/config/slam.rviz" if="$(eval '\'$(var robot)\' == \'nusim\' and \'$(var use_rviz)\' == \'true\'')"/>
 
     <!-- Do start robot launch if robot!=none -->
     <include file="$(find-pkg-share nuturtle_control)/launch/start_robot.launch.xml" if="$(eval '\'$(var robot)\' != \'none\'')">
         <arg name="cmd_src" value="$(var cmd_src)"/>
         <arg name="robot" value="$(var robot)"/>
         <arg name="use_rviz" value="false"/>
+        <arg name="odom_frame" value="map"/>
     </include>
 
     <!-- Load green robot if robot!=none -->
@@ -22,15 +22,27 @@
         <arg name="use_jsp" value="true"/>
     </include>
 
+    <!-- Launch nuslam node -->
+    <node pkg="nuslam" exec="nuslam" name="nuslam">
+        <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+        <param name="body_id" value="green/base_footprint"/>
+        <param name="wheel_left" value="wheel_left_joint"/>
+        <param name="wheel_right" value="wheel_right_joint"/>
+        <remap from="joint_states" to="blue/joint_states"/>
+    </node>
+    
+    <!-- Launch odometry node if robot!=localhost -->
+    <node pkg="nuturtle_control" exec="odometry" if="$(eval '\'$(var robot)\' != \'localhost\'')">
+        <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+        <param name="body_id" value="green/base_footprint" />
+        <param name="wheel_left" value="green/wheel_left_link" />
+        <param name="wheel_right" value="green/wheel_right_link" />
+    </node>
+
     <!-- Publish a static TF between the world and map frames-->
     <node pkg="tf2_ros"
         if="$(eval '\'$(var robot)\' != \'none\'')"
         exec="static_transform_publisher"
         args="0 0 0 0 0 0 nusim/world map"/>
-
-    <!-- Launch nuslam node -->
-    <node pkg="nuslam" exec="nuslam" name="nuslam">
-        <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
-    </node>
 
 </launch>
