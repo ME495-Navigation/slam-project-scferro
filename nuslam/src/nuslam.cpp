@@ -90,13 +90,14 @@ public:
     tf_odom_body = turtlelib::Transform2D{{0.0, 0.0}, 0.0};
     tf_map_odom = turtlelib::Transform2D{{0.0, 0.0}, 0.0};
     tf_map_body = turtlelib::Transform2D{{0.0, 0.0}, 0.0};
+    path_counter = 0;
 
     // Create slam_state vectors. slam state vector includes robot x,y.theta and x,y for obstacles
     slam_state = arma::vec(max_obs * 2 + 3, arma::fill::zeros);
     slam_state_prev = arma::vec(max_obs * 2 + 3, arma::fill::zeros);
     obstacle_initialized = std::vector<bool>(max_obs, false);
     Q = arma::mat(3, 3, arma::fill::zeros);
-    Q.diag() += 1e-2;
+    Q.diag() += 1e-3;
     R = arma::mat(2 * max_obs, 2 * max_obs, arma::fill::zeros);
     R.diag() += 1e-1;
     Q_bar = arma::mat(max_obs * 2 + 3, max_obs * 2 + 3, arma::fill::zeros);
@@ -146,6 +147,7 @@ private:
   double left_wheel_angle, right_wheel_angle;
   turtlelib::Transform2D tf_odom_body, tf_map_odom, tf_map_body;
   turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_diameter, track_width);
+  int path_counter;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr path_timer;
@@ -168,8 +170,12 @@ private:
     // Update slam marker positions
     publish_slam_obstacles();
 
-    // Update slam path
-    update_path();
+    // Update slam path after 5 slam updates
+    if (path_counter >= 5) {
+      update_path();
+      path_counter = 0;
+    }
+    path_counter++;
 
     // Save current slam state as prev
     slam_state_prev = slam_state;
@@ -181,10 +187,12 @@ private:
     // Get odom state and make tf
     std::vector<double> odom_state = diff_drive.return_state();
     tf_odom_body = turtlelib::Transform2D{{odom_state[0], odom_state[1]}, odom_state[2]};
+    // RCLCPP_INFO(this->get_logger(), "{{odom_state[0]: %f, odom_state[1]}: %f, odom_state[2]: %f}", odom_state[0], odom_state[1], odom_state[2]);
 
     // Get tf_map_odom
     tf_map_body = turtlelib::Transform2D{turtlelib::Vector2D{slam_state.at(1), slam_state.at(2)}, slam_state.at(0)};
-    tf_map_odom = tf_map_body * tf_odom_body.inv();
+    // RCLCPP_INFO(this->get_logger(), "{{slam_state[1]: %f, slam_state[2]}: %f, slam_state[0]: %f}", slam_state.at(1), slam_state.at(2), slam_state.at(0));
+    tf_map_odom =  tf_map_body * tf_odom_body.inv();
 
     // Create tf message
     geometry_msgs::msg::TransformStamped tf_map_odom_msg;
@@ -223,6 +231,8 @@ private:
     body_tf = diff_drive.update_state(left_wheel_angle, right_wheel_angle);
     position = body_tf.translation();
     quaternion.setRPY(0, 0, body_tf.rotation());
+
+    // RCLCPP_INFO(this->get_logger(), "left_wheel_angle: %f, right_wheel_angle: %f", left_wheel_angle, right_wheel_angle);
 
     // Create odom message
     nav_msgs::msg::Odometry odom_msg;
@@ -289,6 +299,11 @@ private:
     slam_state.at(0) = normalize_angle(tf_map_body.rotation());
     slam_state.at(1) = tf_map_body.translation().x;
     slam_state.at(2) = tf_map_body.translation().y;
+        
+    RCLCPP_INFO(this->get_logger(), "{{odom_state[0]: %f, odom_state[1]}: %f, odom_state[2]: %f}", odom_state[0], odom_state[1], odom_state[2]);
+    RCLCPP_INFO(this->get_logger(), "{{slam_state[1]: %f, slam_state[2]}: %f, slam_state[0]: %f}", slam_state.at(1), slam_state.at(2), slam_state.at(0));
+    RCLCPP_INFO(this->get_logger(), "{{slam_state_inv[1]: %f, slam_state_inv[2]}: %f, slam_state_inv[0]: %f}", tf_map_body.inv().translation().x, tf_map_body.inv().translation().y, tf_map_body.inv().rotation());
+    RCLCPP_INFO(this->get_logger(), "{{slam_state_inv.inv()[1]: %f, slam_state_inv.inv()[2]}: %f, slam_state_inv[.inv()0]: %f}", tf_map_body.inv().inv().translation().x, tf_map_body.inv().inv().translation().y, tf_map_body.inv().inv().rotation());
     
     // Calculate change in x and y positions
     delta_x = slam_state.at(1) - slam_state_prev.at(1);
@@ -318,7 +333,7 @@ private:
       } else {
         // Convert current x and y to polar coordinates
         r_j = sqrt(pow(marker_x, 2) + pow(marker_y, 2));
-        phi_j = atan2(marker_x, marker_y);
+        phi_j = atan2(marker_y, marker_x);
 
         // Create vector with radius and angle
         arma::vec z_j(2, arma::fill::zeros);
@@ -333,7 +348,6 @@ private:
           // initialize y coordinate
           slam_state.at((2 * id) + 4) = slam_state.at(2) + r_j *
             sin(normalize_angle(phi_j + slam_state.at(0)));
-
           // Mark obstacle as initialized
           obstacle_initialized.at(id) = true;
         }
@@ -372,8 +386,7 @@ private:
 
 
         // Update covariance based on marker
-        int size = (max_obs * 2) + 3;
-        arma::mat identity = arma::eye(size, size);
+        arma::mat identity = arma::eye((max_obs * 2) + 3, (max_obs * 2) + 3);
         Covariance = (identity - K_i * H_j) * Covariance;
       }
     }
