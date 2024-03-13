@@ -85,9 +85,9 @@ public:
     declare_parameter("slip_fraction", 0.2);
     declare_parameter("max_range", 3.5);
     declare_parameter("min_range", 0.12);
-    declare_parameter("basic_sensor_variance", 0.01);
+    declare_parameter("basic_sensor_variance", 0.005);
     declare_parameter("collision_radius", 0.11);
-    declare_parameter("laser_noise", 0.01);
+    declare_parameter("laser_noise", 0.005);
     declare_parameter("laser_samples", 360);
     declare_parameter("draw_only", false);
 

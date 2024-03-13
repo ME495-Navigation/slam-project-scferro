@@ -235,7 +235,7 @@ private:
   {
     std::vector<double> state;
     
-    // Update ground truth red turtle path
+    // Update odometry blue turtle path
     odom_path.header.stamp = get_clock()->now();
     odom_path.header.frame_id = "nusim/world";
 

@@ -29,15 +29,16 @@
         <param name="wheel_left" value="wheel_left_joint"/>
         <param name="wheel_right" value="wheel_right_joint"/>
         <remap from="joint_states" to="blue/joint_states"/>
+        <remap from="odom" to="green/odom"/>
     </node>
     
     <!-- Launch odometry node if robot!=localhost -->
-    <node pkg="nuturtle_control" exec="odometry" if="$(eval '\'$(var robot)\' != \'localhost\'')">
+    <!-- <node pkg="nuturtle_control" exec="odometry" if="$(eval '\'$(var robot)\' != \'localhost\'')">
         <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
         <param name="body_id" value="green/base_footprint" />
         <param name="wheel_left" value="green/wheel_left_link" />
         <param name="wheel_right" value="green/wheel_right_link" />
-    </node>
+    </node> -->
 
     <!-- Publish a static TF between the world and map frames-->
     <node pkg="tf2_ros"

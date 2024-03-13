@@ -55,7 +55,7 @@ public:
     // Parameters and default values
     declare_parameter("rate", 2);
     declare_parameter("body_id", "");
-    declare_parameter("odom", "odom");
+    declare_parameter("odom_id", "odom");
     declare_parameter("wheel_left", "");
     declare_parameter("wheel_right", "");
     declare_parameter("wheel_diameter", -1.0);
@@ -77,10 +77,10 @@ public:
     // Check if parameters have been defined. if not, throw runtime error
     // Refer to Citation [2] ChatGPT
     if (wheel_diameter == -1.0 || track_width == -1.0) {
-      throw std::runtime_error("Diff drive parameters not defined.");
+      throw std::runtime_error("Diff drive parameters not correctly defined.");
     }
     if (body_id == "" || wheel_left == "" || wheel_right == "") {
-      throw std::runtime_error("Frame parameters not defined.");
+      throw std::runtime_error("Frame parameters not correctly defined.");
     }
 
     // Create diff_drive, initialize wheel positions
@@ -101,6 +101,12 @@ public:
     R.diag() += 1e-1;
     Q_bar = arma::mat(max_obs * 2 + 3, max_obs * 2 + 3, arma::fill::zeros);
     Q_bar.submat(0, 0, 2, 2) = Q;
+
+    // Initialize covariance
+    Covariance = arma::mat(max_obs * 2 + 3, max_obs * 2 + 3, arma::fill::zeros);
+    for (int i = 0; i < 2 * max_obs; i++) {
+      Covariance.at(i + 3, i + 3) = 999999;   // Set covariance high b/c nothing is known yet
+    }
 
     // Publishers
     odom_pub = create_publisher<nav_msgs::msg::Odometry>("green/odom", 10);
@@ -152,7 +158,7 @@ private:
 
   /// \brief Callback for receiving obstacle position messages from the fake sensor
   void fake_sensor_callback(const visualization_msgs::msg::MarkerArray & msg)
-  {    
+  {
     // Run prediction step
     predict_ekf(msg);
 
@@ -306,7 +312,6 @@ private:
       marker_y = msg.markers.at(i).pose.position.y;
       int id = msg.markers.at(i).id;
       int act = msg.markers.at(i).action;
-
       if (act == 2) {
         // Obstacle is out of range
         continue;
