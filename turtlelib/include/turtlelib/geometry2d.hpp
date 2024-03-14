@@ -93,6 +93,30 @@ namespace turtlelib
     /// HINT: See operator>> for Vector2D
     std::istream & operator>>(std::istream & is, Point2D & p);
 
+    /// \brief a 2-Dimensional circle
+    struct Circle2D
+    {
+        /// \brief the x coordinate
+        double x = 0.0;
+
+        /// \brief the y coordinate
+        double y = 0.0;
+
+        /// \brief the radius
+        double rad = 0.0;
+    };
+
+    /// \brief output a 2 dimensional circle as [xcomponent ycomponent radius]
+    /// \param os - stream to output to
+    /// \param circle - the circle to print
+    std::ostream & operator<<(std::ostream & os, const Circle2D & circle);
+
+    /// \brief input a 2 dimensional circle
+    /// \param is - stream from which to read
+    /// \param circle [out] - output circle
+    /// HINT: See operator>> for Vector2D
+    std::istream & operator>>(std::istream & is, Circle2D & circle);
+
     /// \brief A 2-Dimensional Vector
     struct Vector2D
     {

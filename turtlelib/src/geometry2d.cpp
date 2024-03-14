@@ -35,6 +35,29 @@ namespace turtlelib {
         return is;
     }
 
+    std::ostream & operator<<(std::ostream & os, const Circle2D & circle) {
+        os << "[" << circle.x << " " << circle.y << " " << circle.rad "]"; // Output format: [x y rad]
+        return os;
+    }
+
+    std::istream & operator>>(std::istream & is, Circle2D & circle) {
+        const auto first_char = is.peek();
+        if (first_char == '[') {
+            is.get();
+            is >> circle.x;
+            is >> circle.y;
+            is >> circle.rad;
+            is.get();
+        } else {
+            is >> circle.x;
+            is >> circle.y;
+            is >> circle.rad;
+        }
+
+        is.ignore(50, '\n');
+        return is;
+    }
+
     Vector2D operator-(const Point2D & head, const Point2D & tail) {
         Vector2D newVector;
         newVector.x = head.x - tail.x;
