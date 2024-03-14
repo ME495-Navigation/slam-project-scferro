@@ -36,7 +36,7 @@ namespace turtlelib {
     }
 
     std::ostream & operator<<(std::ostream & os, const Circle2D & circle) {
-        os << "[" << circle.x << " " << circle.y << " " << circle.rad "]"; // Output format: [x y rad]
+        os << "[" << circle.x << " " << circle.y << " " << circle.rad << "]"; // Output format: [x y rad]
         return os;
     }
 

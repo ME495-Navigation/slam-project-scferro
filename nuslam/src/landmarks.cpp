@@ -75,7 +75,7 @@ private:
 
     // Clear groups and obstacle lists
     groups.clear();
-    obstacle_list.cle();
+    obstacle_list.clear();
     
     for (int i = 0; i < static_cast<int>(msg.ranges.size()); i++) {
         // Extract heading and angle and convert to cartesian
@@ -167,7 +167,7 @@ private:
     }
     
     // Publish obstacle markers
-    circle_pub_->publish(marker_array);
+    obstacles_pub->publish(marker_array);
   }
 
   /// @brief Detects circles in groups of lidar points
@@ -176,7 +176,7 @@ private:
     // Iterate through groups vector to analyze each group individually 
     for (int i = 0; i < static_cast<int>(groups.size()); i++) {
         auto group = groups.at(i);
-        double x_sum, y_sum, z_bar, 
+        double x_sum, y_sum, z_bar;
         turtlelib::Point2D center;
         arma::mat data_matrix(group.size(), 4);
         arma::mat constraint_matrix(4, 4);
@@ -249,7 +249,7 @@ private:
 
                 // Calculate Y and Q matrices
                 arma::mat Y = V * sigma * V.t();
-                arma::mat Q = Y * constraint_mat_inv * Y;
+                arma::mat Q = Y * constraint_matrix_inv * Y;
                 
                 // Find the eigenvectors and values of Q
                 arma::cx_vec eigenvalues;
@@ -297,7 +297,7 @@ private:
             obstacle.x = a;
             obstacle.y = b;
             obstacle.rad = rad;
-            obstacle_list.push_back(obstacle)
+            obstacle_list.push_back(obstacle);
         }
     }
   }
@@ -320,13 +320,13 @@ private:
     }
 
     // Find angles between P1, P, and P2 for all P in group
-    for (int i = 1; i < group.size() - 2; i++){
+    for (int i = 1; i < static_cast<int>(group.size()) - 2; i++){
         // Extract current point
         auto P = group.at(i);
         // use law of cosines
         // std::cout << "Point" << P << std::endl;
-        double c = sqrt(pow(P1.x - P.x, 2) + pow(P1.y - P.y, 2));
-        double c = sqrt(pow(P.x - P2.x, 2) + pow(P.y - P2.y, 2));
+        double a = sqrt(pow(P1.x - P.x, 2) + pow(P1.y - P.y, 2));
+        double b = sqrt(pow(P.x - P2.x, 2) + pow(P.y - P2.y, 2));
         // Find angle between line a and b
         double angle = acos(pow(a, 2) + pow(b, 2) - pow(c, 2) / (2 * a * b));
         // Add angle to mean and std_dev 
@@ -336,13 +336,13 @@ private:
 
     // Find mean and std dev
     angles_mean /= (angles.size());
-    for (int i = 0; i < (group.size() - 2); i++){
+    for (int i = 0; i < (static_cast<int>(group.size()) - 2); i++){
         angles_std_dev += ((angles.at(i) - angles_mean) * (angles.at(i) - angles_mean));
     }
     angles_std_dev = sqrt(angles_std_dev/(angles.size()));
 
     // Return true if angle meets all threshold criteria
-    return ((angles_std_dev < std_dev_thres) &&
+    return ((angles_std_dev < std_dev_thresh) &&
             (angles_mean > mean_lo_thresh) &&
             (angles_mean < mean_hi_thresh));
 
