@@ -45,9 +45,15 @@ ament_target_dependencies(nuslam rclcpp std_msgs geometry_msgs sensor_msgs std_s
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 target_link_libraries(nuslam turtlelib::turtlelib ${ARMADILLO_LIBRARIES} "${cpp_typesupport_target}")
 
+add_executable(landmarks src/landmarks.cpp)
+ament_target_dependencies(landmarks rclcpp std_msgs geometry_msgs sensor_msgs visualization_msgs nuturtlebot_msgs nav_msgs Armadillo)
+include_directories(${ARMADILLO_INCLUDE_DIRS})
+target_link_libraries(landmarks turtlelib::turtlelib ${ARMADILLO_LIBRARIES} "${cpp_typesupport_target}")
+
 
 install(TARGETS
   nuslam
+  landmarks
   DESTINATION lib/${PROJECT_NAME}
 )
 
