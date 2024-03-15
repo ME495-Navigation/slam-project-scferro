@@ -455,8 +455,10 @@ private:
       obstacle.pose.position.y = slam_state.at((2 * i) + 4);
       obstacle.pose.position.z = 0.125;
 
-      // Add to marker array
-      obstacles.markers.push_back(obstacle);
+      // Add to marker array if real obstacle
+      if ((obstacle.pose.position.x != 0.) && (obstacle.pose.position.y != 0.)) {
+        obstacles.markers.push_back(obstacle);
+      }
     }
 
     // Publish obstacle markers

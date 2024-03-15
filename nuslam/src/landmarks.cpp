@@ -7,7 +7,7 @@
 /// PUBLISHES:
 ///     detected_obs (visualization_msgs::msg::MarkerArray): circle detection results
 /// SUBSCRIBES:
-///    scan (sensor_msgs::msg::LaserScan): lidar scan data
+///     scan (sensor_msgs::msg::LaserScan): lidar scan data
 
 
 #include <chrono>
@@ -22,6 +22,7 @@
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "rclcpp/qos.hpp"
 #include "turtlelib/geometry2d.hpp"
+#include "builtin_interfaces/msg/time.hpp"
 
 
 class Landmarks : public rclcpp::Node
@@ -57,6 +58,7 @@ private:
   double group_threshold, std_dev_thresh, mean_lo_thresh, mean_hi_thresh;
   std::vector<std::vector<turtlelib::Point2D>> groups;
   std::vector<turtlelib::Circle2D> obstacle_list;
+  builtin_interfaces::msg::Time msg_stamp;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstacles_pub;
@@ -69,6 +71,7 @@ private:
     turtlelib::Point2D prev_point;
     bool first_point_flag = true;
     turtlelib::Point2D current_point, first_point;
+    msg_stamp = msg.header.stamp;
 
     // Clear groups and obstacle lists
     groups.clear();
@@ -133,19 +136,20 @@ private:
   {
     // Create marker array fill with markers
     visualization_msgs::msg::MarkerArray marker_array;
+
     for (int i = 0; i < static_cast<int>(obstacle_list.size()); i++) {
         visualization_msgs::msg::Marker marker;
 
-        marker.header.stamp = get_clock()->now();
+        marker.header.stamp = msg_stamp;
         marker.header.frame_id = "green/base_footprint";
         marker.id = i; 
         marker.type = 3;  // cylinder
         marker.action = 0;
 
         // Set color to green
-        marker.color.r = 0.0;
-        marker.color.g = 1.0;
-        marker.color.b = 0.0;
+        marker.color.r = 1.0;
+        marker.color.g = 0.0;
+        marker.color.b = 1.0;
         marker.color.a = 1.0;
 
         // Set Radius
@@ -172,11 +176,9 @@ private:
     // Iterate through groups vector to analyze each group individually 
     for (int i = 0; i < static_cast<int>(groups.size()); i++) {
         auto group = groups.at(i);
-        double x_sum, y_sum, z_bar;
         turtlelib::Point2D center;
-        arma::mat data_matrix(group.size(), 4);
-        arma::mat constraint_matrix(4, 4);
-        arma::mat constraint_matrix_inv(4, 4);
+        arma::mat data_matrix = arma::zeros(group.size(), 4);
+        arma::mat constraint_matrix = arma::zeros(4, 4);
 
         // Check if group is a circle
         bool is_circle = circle_check(group);
@@ -185,12 +187,15 @@ private:
         if (is_circle) {
             
             // Add points in group, then divide to find mean. mean is center of circle
+            double x_sum = 0.;
+            double y_sum = 0.;
+            double z_bar = 0.;
             for (int j = 0; j < static_cast<int>(group.size()); j++) {
                 x_sum += group.at(j).x;
                 y_sum += group.at(j).y;
             }
             center.x = x_sum / group.size();
-            center.y = y_sum / group.size();
+            center.y = y_sum / group.size();  
 
             // Iterate through all points in group
             for (int j = 0; j < static_cast<int>(group.size()); j++) {
@@ -209,11 +214,12 @@ private:
                 data_matrix.at(j, 3) = 1;
 
                 // Add z_i to z_bar
-                z_bar += z_i;            
+                z_bar += z_i;        
             }
 
             // Calculate z_bar, average of z_i
             z_bar = z_bar / group.size();
+            RCLCPP_INFO(this->get_logger(), "z_bar: %f", z_bar);
 
             // Fill out constraint matrix and inverse
             constraint_matrix.at(0, 0) = 8. * z_bar;
@@ -221,7 +227,6 @@ private:
             constraint_matrix.at(2, 2) = 1.;
             constraint_matrix.at(3, 0) = 2.;
             constraint_matrix.at(0, 3) = 2.;
-            constraint_matrix_inv = constraint_matrix.i();
 
             // Compute singular value decomposition of data matrix
             arma::mat U;
@@ -232,49 +237,40 @@ private:
             // Find smallest singular value of SVD
             double smallest_singular = s(3);
             
-            arma::vec A;
+            arma::colvec A;
             if (smallest_singular < 1e-12){
                 // If smallest singular value is lower than 10^-12, A = 4th column of V matrix
                 A = V.col(3);
             } else {
-                // Create sigma matrix from s vector
-                arma::mat sigma(4, 4, arma::fill::zeros);
-                for (int i = 0; i < 4; i++){
-                    sigma.at(i,i) = s.at(i);
-                }
-
                 // Calculate Y and Q matrices
-                arma::mat Y = V * sigma * V.t();
-                arma::mat Q = Y * constraint_matrix_inv * Y;
+                arma::mat Y = V * arma::diagmat(s) * V.t();
+                arma::mat Q = Y * constraint_matrix.i() * Y;
                 
                 // Find the eigenvectors and values of Q
                 arma::cx_vec eigenvalues;
                 arma::cx_mat eigenvectors;
                 arma::eig_gen(eigenvalues, eigenvectors, Q);
+                // Get real values
+                arma::mat real_eigenvalues = arma::real(eigenvalues);
+                arma::mat real_eigenvectors = arma::real(eigenvectors);
 
                 // Find the smallest positive eigenvalue of Q
-                double smallest_pos_eigenvalue = 0.0;
+                double smallest_pos_eigenvalue = -1.0;
                 double smallest_pos_eigenvalue_index = 0.0;
-                for (int i = 0; i < 4; i++){
+                for (int i = 0; i < static_cast<int>(real_eigenvalues.size()); i++){
                     // Iterate through eigenvalues to find smallest
-                    const auto curr_eigenvalue = eigenvalues.at(i).real();
+                    auto curr_eigenvalue = real_eigenvalues.at(i);
                     if ((curr_eigenvalue >= 0) && ((curr_eigenvalue < smallest_pos_eigenvalue) ||  (smallest_pos_eigenvalue == -1.0))){
                         smallest_pos_eigenvalue = curr_eigenvalue;
                         smallest_pos_eigenvalue_index = i;
                     }
                 }
-                
-                // Astar is eigenvector corresponding to the smallest positive eigenvalue of Q
-                arma::cx_vec Astar = eigenvectors.col(smallest_pos_eigenvalue_index);
 
-                // Find A from Y * A = Astar
-                arma::cx_mat A_cx = Y.i() * Astar;
-                
-                // Use real values of A from A_cx
-                A = arma::vec(4);
-                for (int i = 0; i < 4; i++){
-                    A.at(i) = A_cx.at(i).real();
-                }
+                // A_star is eigenvector corresponding to the smallest positive eigenvalue of Q
+                arma::vec A_star = real_eigenvectors.col(smallest_pos_eigenvalue_index);
+
+                // Find A from Y * A = A_star
+                A = Y.i() * A_star;
             }
             
             // Extract A values from A vector
@@ -286,12 +282,17 @@ private:
             // Find coordinates and radius of circle using A values
             double a = -0.5 * A2 / A1;
             double b = -0.5 * A3 / A1;
-            double rad = sqrt(((A2 * A2) + (A3 * A3) - (4 * A1 * A4)) / (4 * A1 * A1));
+            double rad = sqrt((pow(A2, 2) + pow(A3, 2) - (4. * A1 * A4)) / (4. * pow(A1, 2)));
+
+
+            RCLCPP_INFO(this->get_logger(), "a: %f", a);
+            RCLCPP_INFO(this->get_logger(), "b: %f", b);
+            RCLCPP_INFO(this->get_logger(), "rad: %f", rad);
 
             // Create obstacle Circle2D object and add obstacle to obstacle list
             turtlelib::Circle2D obstacle;
-            obstacle.x = a;
-            obstacle.y = b;
+            obstacle.x = a + center.x;
+            obstacle.y = b + center.y;
             obstacle.rad = rad;
             obstacle_list.push_back(obstacle);
         }
@@ -311,7 +312,10 @@ private:
     double c = sqrt(pow(P1.x - P2.x, 2) + pow(P1.y - P2.y, 2));
 
     // If group is smaller than 4 points, not enough data to check if it's a circle
+    // If group is larger than 30 points, not a real obstacle, likely the curve of the lidar scan in space
     if (group.size() < 4) {
+        return false;
+    } else if  (group.size() > 30) {
         return false;
     }
 
