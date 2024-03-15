@@ -187,11 +187,9 @@ private:
     // Get odom state and make tf
     std::vector<double> odom_state = diff_drive.return_state();
     tf_odom_body = turtlelib::Transform2D{{odom_state[0], odom_state[1]}, odom_state[2]};
-    // RCLCPP_INFO(this->get_logger(), "{{odom_state[0]: %f, odom_state[1]}: %f, odom_state[2]: %f}", odom_state[0], odom_state[1], odom_state[2]);
 
     // Get tf_map_odom
     tf_map_body = turtlelib::Transform2D{turtlelib::Vector2D{slam_state.at(1), slam_state.at(2)}, slam_state.at(0)};
-    // RCLCPP_INFO(this->get_logger(), "{{slam_state[1]: %f, slam_state[2]}: %f, slam_state[0]: %f}", slam_state.at(1), slam_state.at(2), slam_state.at(0));
     tf_map_odom =  tf_map_body * tf_odom_body.inv();
 
     // Create tf message
@@ -299,11 +297,6 @@ private:
     slam_state.at(0) = normalize_angle(tf_map_body.rotation());
     slam_state.at(1) = tf_map_body.translation().x;
     slam_state.at(2) = tf_map_body.translation().y;
-        
-    RCLCPP_INFO(this->get_logger(), "{{odom_state[0]: %f, odom_state[1]}: %f, odom_state[2]: %f}", odom_state[0], odom_state[1], odom_state[2]);
-    RCLCPP_INFO(this->get_logger(), "{{slam_state[1]: %f, slam_state[2]}: %f, slam_state[0]: %f}", slam_state.at(1), slam_state.at(2), slam_state.at(0));
-    RCLCPP_INFO(this->get_logger(), "{{slam_state_inv[1]: %f, slam_state_inv[2]}: %f, slam_state_inv[0]: %f}", tf_map_body.inv().translation().x, tf_map_body.inv().translation().y, tf_map_body.inv().rotation());
-    RCLCPP_INFO(this->get_logger(), "{{slam_state_inv.inv()[1]: %f, slam_state_inv.inv()[2]}: %f, slam_state_inv[.inv()0]: %f}", tf_map_body.inv().inv().translation().x, tf_map_body.inv().inv().translation().y, tf_map_body.inv().inv().rotation());
     
     // Calculate change in x and y positions
     delta_x = slam_state.at(1) - slam_state_prev.at(1);

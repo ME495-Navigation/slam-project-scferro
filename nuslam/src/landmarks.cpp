@@ -31,14 +31,12 @@ public:
   : Node("landmarks")
   {
     // Parameters and default values
-    declare_parameter("rate", 200);
-    declare_parameter("group_threshold", 0.1);
-    declare_parameter("std_dev_thresh", 0.15);
-    declare_parameter("mean_lo_thresh", 90.);
-    declare_parameter("mean_hi_thresh", 135.);
+    declare_parameter("group_threshold", 0.2);
+    declare_parameter("std_dev_thresh", 0.25);
+    declare_parameter("mean_lo_thresh", 80.);
+    declare_parameter("mean_hi_thresh", 145.);
 
     // Define parameter variables
-    loop_rate = get_parameter("rate").as_int();
     group_threshold = get_parameter("group_threshold").as_double();
     std_dev_thresh = get_parameter("std_dev_thresh").as_double();
     mean_lo_thresh = get_parameter("mean_lo_thresh").as_double();
@@ -56,7 +54,6 @@ public:
 private:
   // Initialize parameter variables
   int rate;
-  int loop_rate;
   double group_threshold, std_dev_thresh, mean_lo_thresh, mean_hi_thresh;
   std::vector<std::vector<turtlelib::Point2D>> groups;
   std::vector<turtlelib::Circle2D> obstacle_list;
@@ -88,8 +85,7 @@ private:
             // Calculate distance to previous point
             double dist_to_prev = sqrt(pow(current_point.x - prev_point.x, 2) + pow(current_point.y - prev_point.y, 2));
 
-            // If distance is less than threshold, add point to current group
-            // Else, create a new group and add old group to groups vector
+            // If distance is greater than threshold, create a new group and add old group to groups vector
             if (dist_to_prev > group_threshold) {
                 // Add group to group vector then reset current_group
                 groups.push_back(current_group);
@@ -121,14 +117,16 @@ private:
         // Combine first and last groups
         groups.at(0).insert(groups.at(0).begin(), current_group.begin(), current_group.end());
     }
+    
+    RCLCPP_INFO(this->get_logger(), "GROUPS DONE");
 
     // Detect circles in grouped points
     detect_circles();
 
+    RCLCPP_INFO(this->get_logger(), "Obstacle Count: %ld", obstacle_list.size());
+
     // Publish obstacle locations based on detected circles
     publish_obstacles();
-
-    RCLCPP_INFO(this->get_logger(), "Obstacle Count: %ld", obstacle_list.size());
 
   }
 
@@ -184,6 +182,7 @@ private:
 
         // Check if group is a circle
         bool is_circle = circle_check(group);
+        RCLCPP_INFO(this->get_logger(), "DDDDDDD");
 
         // If group is circle, find center and radius and add to obstacle vector
         if (is_circle) {
@@ -195,6 +194,7 @@ private:
             }
             center.x = x_sum / group.size();
             center.y = y_sum / group.size();
+            RCLCPP_INFO(this->get_logger(), "EEEEEEEEEEEEE");
 
             // Iterate through all points in group
             for (int j = 0; j < static_cast<int>(group.size()); j++) {
@@ -226,6 +226,7 @@ private:
             constraint_matrix.at(3, 0) = 2.;
             constraint_matrix.at(0, 3) = 2.;
             constraint_matrix_inv = constraint_matrix.i();
+            RCLCPP_INFO(this->get_logger(), "FFFFFFFFFFFFf");
 
             // Compute singular value decomposition of data matrix
             arma::mat U;
@@ -280,6 +281,7 @@ private:
                     A.at(i) = A_cx.at(i).real();
                 }
             }
+            RCLCPP_INFO(this->get_logger(), "GGGGGGGGGGGGGG");
             
             // Extract A values from A vector
             double A1 = A.at(0);
@@ -313,6 +315,7 @@ private:
     double angles_mean = 0.0;
     double angles_std_dev = 0.0;
     double c = sqrt(pow(P1.x - P2.x, 2) + pow(P1.y - P2.y, 2));
+    RCLCPP_INFO(this->get_logger(), "AAAAA");
 
     // If group is smaller than 4 points, not enough data to check if it's a circle
     if (group.size() < 4) {
@@ -335,8 +338,9 @@ private:
     }
 
     // Find mean and std dev
-    angles_mean /= (angles.size());
-    for (int i = 0; i < (static_cast<int>(group.size()) - 2); i++){
+    RCLCPP_INFO(this->get_logger(), "Group size: %ld", angles.size());
+    angles_mean = angles_mean / angles.size();
+    for (int i = 0; i < (static_cast<int>(angles.size()) - 1); i++){
         angles_std_dev += ((angles.at(i) - angles_mean) * (angles.at(i) - angles_mean));
     }
     angles_std_dev = sqrt(angles_std_dev/(angles.size()));
