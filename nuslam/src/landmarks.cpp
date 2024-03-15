@@ -33,8 +33,8 @@ public:
     // Parameters and default values
     declare_parameter("group_threshold", 0.2);
     declare_parameter("std_dev_thresh", 0.25);
-    declare_parameter("mean_lo_thresh", 80.);
-    declare_parameter("mean_hi_thresh", 145.);
+    declare_parameter("mean_lo_thresh", 3.1415926 / 2);
+    declare_parameter("mean_hi_thresh", 3.1415926 * 3/ 4);
 
     // Define parameter variables
     group_threshold = get_parameter("group_threshold").as_double();
@@ -76,7 +76,7 @@ private:
     
     for (int i = 0; i < static_cast<int>(msg.ranges.size()); i++) {
         // Extract heading and angle and convert to cartesian
-        double angle = msg.angle_min + ((i / msg.ranges.size()) * 2 * 3.1415926);
+        double angle = msg.angle_min + (i * 2 * 3.1415926 / msg.ranges.size());
         double rad = msg.ranges.at(i);
         current_point = polar_to_cart(angle, rad);
 
@@ -117,8 +117,6 @@ private:
         // Combine first and last groups
         groups.at(0).insert(groups.at(0).begin(), current_group.begin(), current_group.end());
     }
-    
-    RCLCPP_INFO(this->get_logger(), "GROUPS DONE");
 
     // Detect circles in grouped points
     detect_circles();
@@ -182,7 +180,6 @@ private:
 
         // Check if group is a circle
         bool is_circle = circle_check(group);
-        RCLCPP_INFO(this->get_logger(), "DDDDDDD");
 
         // If group is circle, find center and radius and add to obstacle vector
         if (is_circle) {
@@ -194,7 +191,6 @@ private:
             }
             center.x = x_sum / group.size();
             center.y = y_sum / group.size();
-            RCLCPP_INFO(this->get_logger(), "EEEEEEEEEEEEE");
 
             // Iterate through all points in group
             for (int j = 0; j < static_cast<int>(group.size()); j++) {
@@ -226,7 +222,6 @@ private:
             constraint_matrix.at(3, 0) = 2.;
             constraint_matrix.at(0, 3) = 2.;
             constraint_matrix_inv = constraint_matrix.i();
-            RCLCPP_INFO(this->get_logger(), "FFFFFFFFFFFFf");
 
             // Compute singular value decomposition of data matrix
             arma::mat U;
@@ -281,7 +276,6 @@ private:
                     A.at(i) = A_cx.at(i).real();
                 }
             }
-            RCLCPP_INFO(this->get_logger(), "GGGGGGGGGGGGGG");
             
             // Extract A values from A vector
             double A1 = A.at(0);
@@ -315,7 +309,6 @@ private:
     double angles_mean = 0.0;
     double angles_std_dev = 0.0;
     double c = sqrt(pow(P1.x - P2.x, 2) + pow(P1.y - P2.y, 2));
-    RCLCPP_INFO(this->get_logger(), "AAAAA");
 
     // If group is smaller than 4 points, not enough data to check if it's a circle
     if (group.size() < 4) {
@@ -326,19 +319,19 @@ private:
     for (int i = 1; i < static_cast<int>(group.size()) - 2; i++){
         // Extract current point
         auto P = group.at(i);
-        // use law of cosines
-        // std::cout << "Point" << P << std::endl;
+        // Solve for angle with law of cosines
         double a = sqrt(pow(P1.x - P.x, 2) + pow(P1.y - P.y, 2));
         double b = sqrt(pow(P.x - P2.x, 2) + pow(P.y - P2.y, 2));
         // Find angle between line a and b
-        double angle = acos(pow(a, 2) + pow(b, 2) - pow(c, 2) / (2 * a * b));
+        double numer = pow(a, 2) + pow(b, 2) - pow(c, 2);
+        double denom = (2 * a * b);
+        double angle = acos(numer / denom);
         // Add angle to mean and std_dev 
         angles_mean += angle;
         angles.push_back(angle);
     }
 
     // Find mean and std dev
-    RCLCPP_INFO(this->get_logger(), "Group size: %ld", angles.size());
     angles_mean = angles_mean / angles.size();
     for (int i = 0; i < (static_cast<int>(angles.size()) - 1); i++){
         angles_std_dev += ((angles.at(i) - angles_mean) * (angles.at(i) - angles_mean));
@@ -349,7 +342,6 @@ private:
     return ((angles_std_dev < std_dev_thresh) &&
             (angles_mean > mean_lo_thresh) &&
             (angles_mean < mean_hi_thresh));
-
   }
   
   /// @brief  Converts polar coordinates to a point

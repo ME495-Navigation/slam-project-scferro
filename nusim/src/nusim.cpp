@@ -87,7 +87,7 @@ public:
     declare_parameter("min_range", 0.12);
     declare_parameter("basic_sensor_variance", 0.001);
     declare_parameter("collision_radius", 0.11);
-    declare_parameter("laser_noise", 0.0005);
+    declare_parameter("laser_noise", 0.0); //0.0005);
     declare_parameter("laser_samples", 360);
     declare_parameter("draw_only", false);
 
