@@ -55,5 +55,5 @@ Task L.2 - SLAM in controlled environment: COMPLETE
 Task L.3 - SLAM with unknown data: IN PROGRESS
 Task L.4 - SLAM IRL: IN PROGRESS
 
-Task S.1 - Implement Landmark Detection: IN PROGRESS
+Task S.1 - Implement Landmark Detection: COMPLETE
 Task S.2 - Testing Landmark Detection: IN PROGRESS

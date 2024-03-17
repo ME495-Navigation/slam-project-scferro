@@ -32,10 +32,10 @@ public:
   : Node("landmarks")
   {
     // Parameters and default values
-    declare_parameter("group_threshold", 0.2);
-    declare_parameter("std_dev_thresh", 0.25);
-    declare_parameter("mean_lo_thresh", 3.1415926 / 2);
-    declare_parameter("mean_hi_thresh", 3.1415926 * 3/ 4);
+    declare_parameter("group_threshold", 0.25);
+    declare_parameter("std_dev_thresh", 0.4);
+    declare_parameter("mean_lo_thresh", 1.4);
+    declare_parameter("mean_hi_thresh", 2.6);
 
     // Define parameter variables
     group_threshold = get_parameter("group_threshold").as_double();

@@ -87,9 +87,10 @@ public:
     declare_parameter("min_range", 0.12);
     declare_parameter("basic_sensor_variance", 0.001);
     declare_parameter("collision_radius", 0.11);
-    declare_parameter("laser_noise", 0.0); //0.0005);
+    declare_parameter("laser_noise", 0.00);//01);
     declare_parameter("laser_samples", 360);
     declare_parameter("draw_only", false);
+    declare_parameter("publish_obs", false);
 
     // Define parameter variables
     loop_rate = get_parameter("rate").as_int();
@@ -116,6 +117,7 @@ public:
     laser_noise = get_parameter("laser_noise").as_double();
     laser_samples = get_parameter("laser_samples").as_int();
     draw_only = get_parameter("draw_only").as_bool();
+    publish_obs = get_parameter("publish_obs").as_bool();
 
     // Create diff_drive, initialize wheel speeds
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
@@ -186,7 +188,7 @@ private:
   geometry_msgs::msg::PoseStamped nusim_pose;
   std::normal_distribution<> noise_range, sensor_range, laser_range;
   std::uniform_real_distribution<> slip_range;
-  bool draw_only;
+  bool draw_only, publish_obs;
   std::vector<double> wheel_angles_no_slip;
 
   // Create ROS publishers, timers, broadcasters, etc.
@@ -293,8 +295,10 @@ private:
   /// @brief Publishes the fake sensor reading
   void fake_sensor_timer_callback()
   {
-    // Update the obstacle positions using the fake sensor
-    fake_sensor();
+    // Update the obstacle positions using the fake sensor if publish_obs==true
+    if (publish_obs) {
+      fake_sensor();
+    }
 
     // Publish the lidar markers
     publish_laser();

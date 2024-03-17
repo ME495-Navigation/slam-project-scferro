@@ -26,6 +26,7 @@
 #include <vector>
 #include <functional>
 #include <armadillo>
+#include <iostream>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/u_int64.hpp"
@@ -91,6 +92,7 @@ public:
     tf_map_odom = turtlelib::Transform2D{{0.0, 0.0}, 0.0};
     tf_map_body = turtlelib::Transform2D{{0.0, 0.0}, 0.0};
     path_counter = 0;
+    num_obs = 0;
 
     // Create slam_state vectors. slam state vector includes robot x,y.theta and x,y for obstacles
     slam_state = arma::vec(max_obs * 2 + 3, arma::fill::zeros);
@@ -117,7 +119,10 @@ public:
     // Subscribers
     fake_sensor_sub = create_subscription<visualization_msgs::msg::MarkerArray>(
       "red/fake_sensor",
-      10, std::bind(&Nuslam::fake_sensor_callback, this, std::placeholders::_1));
+      10, std::bind(&Nuslam::do_slam_callback, this, std::placeholders::_1));
+    detected_obs_sub = create_subscription<visualization_msgs::msg::MarkerArray>(
+      "detected_obs",
+      10, std::bind(&Nuslam::do_slam_callback, this, std::placeholders::_1));
     joint_states_sub = create_subscription<sensor_msgs::msg::JointState>(
       "joint_states",
       10, std::bind(&Nuslam::joint_states_callback, this, std::placeholders::_1));
@@ -135,7 +140,7 @@ public:
 private:
   // Initialize parameter variables
   int rate;
-  int loop_rate, max_obs;
+  int loop_rate, max_obs, num_obs;
   std::string body_id, odom_id, wheel_left, wheel_right;
   double track_width, wheel_diameter, obstacle_radius;
   bool use_lidar;
@@ -155,11 +160,12 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr slam_obstacle_pub;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub;
   rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr fake_sensor_sub;
+  rclcpp::Subscription<visualization_msgs::msg::MarkerArray>::SharedPtr detected_obs_sub;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_sub;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
 
   /// \brief Callback for receiving obstacle position messages from the fake sensor
-  void fake_sensor_callback(const visualization_msgs::msg::MarkerArray & msg)
+  void do_slam_callback(const visualization_msgs::msg::MarkerArray & msg)
   {
     // Run prediction step
     predict_ekf(msg);
@@ -281,10 +287,10 @@ private:
   void predict_ekf(const visualization_msgs::msg::MarkerArray & msg)
   {
     double delta_x, delta_y;
-    double marker_x, marker_y, r_j, phi_j;
-    double dx_j_hat, dy_j_hat, d_j_hat, r_j_hat, phi_j_hat;
+    double marker_x, marker_y, rad, phi;
+    double dx_hat, dy_hat, d_hat, rad_hat, phi_hat;
     arma::mat H_j(2, 3 + 2 * max_obs, arma::fill::zeros);
-    arma::vec z_j_hat(2, arma::fill::zeros);
+    arma::vec z_k_hat(2, arma::fill::zeros);
 
     // Get odom state
     std::vector<double> odom_state = diff_drive.return_state();
@@ -318,52 +324,53 @@ private:
       // extract coordinates, id, and action from message
       marker_x = msg.markers.at(i).pose.position.x;
       marker_y = msg.markers.at(i).pose.position.y;
-      int id = msg.markers.at(i).id;
-      int act = msg.markers.at(i).action;
-      if (act == 2) {
+      int id = associate_obs(marker_x, marker_y); //msg.markers.at(i).id;
+      // RCLCPP_INFO(this->get_logger(), "id: %d", id);
+      if (id == -1) {
         // Obstacle is out of range
         continue;
       } else {
         // Convert current x and y to polar coordinates
-        r_j = sqrt(pow(marker_x, 2) + pow(marker_y, 2));
-        phi_j = atan2(marker_y, marker_x);
+        rad = sqrt(pow(marker_x, 2) + pow(marker_y, 2));
+        phi = atan2(marker_y, marker_x);
 
         // Create vector with radius and angle
         arma::vec z_j(2, arma::fill::zeros);
-        z_j.at(0) = r_j;
-        z_j.at(1) = phi_j;
+        z_j.at(0) = rad;
+        z_j.at(1) = phi;
 
         // check if this obstacle has been initialized
         if (!obstacle_initialized.at(id)) {
+          RCLCPP_INFO(this->get_logger(), "initializing: %d", id);
           // initialize x coordinate
-          slam_state.at((2 * id) + 3) = slam_state.at(1) + r_j *
-            cos(normalize_angle(phi_j + slam_state.at(0)));
+          slam_state.at((2 * id) + 3) = slam_state.at(1) + rad *
+            cos(normalize_angle(phi + slam_state.at(0)));
           // initialize y coordinate
-          slam_state.at((2 * id) + 4) = slam_state.at(2) + r_j *
-            sin(normalize_angle(phi_j + slam_state.at(0)));
+          slam_state.at((2 * id) + 4) = slam_state.at(2) + rad *
+            sin(normalize_angle(phi + slam_state.at(0)));
           // Mark obstacle as initialized
           obstacle_initialized.at(id) = true;
         }
 
         // Find estimated state Z_bar
-        dx_j_hat = slam_state.at(3 + (2 * id)) - slam_state.at(1);
-        dy_j_hat = slam_state.at(3 + (2 * id) + 1) - slam_state.at(2);
-        d_j_hat = dx_j_hat * dx_j_hat + dy_j_hat * dy_j_hat;
-        r_j_hat = sqrt(d_j_hat);
-        phi_j_hat = normalize_angle(atan2(dy_j_hat, dx_j_hat) - slam_state.at(0));
-        z_j_hat.at(0) = r_j_hat;
-        z_j_hat.at(1) = phi_j_hat;
+        dx_hat = slam_state.at(3 + (2 * id)) - slam_state.at(1);
+        dy_hat = slam_state.at(3 + (2 * id) + 1) - slam_state.at(2);
+        d_hat = dx_hat * dx_hat + dy_hat * dy_hat;
+        rad_hat = sqrt(d_hat);
+        phi_hat = normalize_angle(atan2(dy_hat, dx_hat) - slam_state.at(0));
+        z_k_hat.at(0) = rad_hat;
+        z_k_hat.at(1) = phi_hat;
 
         // Create H_j from predicted state
         H_j.at(1, 0) = -1.0;
-        H_j.at(0, 1) = -dx_j_hat / r_j_hat;
-        H_j.at(1, 1) = dy_j_hat / d_j_hat;
-        H_j.at(0, 2) = -dy_j_hat / r_j_hat;
-        H_j.at(1, 2) = -dx_j_hat / d_j_hat;
-        H_j.at(0, 3 + (2 * id)) = dx_j_hat / r_j_hat;
-        H_j.at(1, 3 + (2 * id)) = -dy_j_hat / d_j_hat;
-        H_j.at(0, 4 + (2 * id)) = dy_j_hat / r_j_hat;
-        H_j.at(1, 4 + (2 * id)) = dx_j_hat / d_j_hat;
+        H_j.at(0, 1) = -dx_hat / rad_hat;
+        H_j.at(1, 1) = dy_hat / d_hat;
+        H_j.at(0, 2) = -dy_hat / rad_hat;
+        H_j.at(1, 2) = -dx_hat / d_hat;
+        H_j.at(0, 3 + (2 * id)) = dx_hat / rad_hat;
+        H_j.at(1, 3 + (2 * id)) = -dy_hat / d_hat;
+        H_j.at(0, 4 + (2 * id)) = dy_hat / rad_hat;
+        H_j.at(1, 4 + (2 * id)) = dx_hat / d_hat;
 
         // Find kalman gain K_i
         arma::mat R_i = R.submat((2 * id), (2 * id), (2 * id) + 1, (2 * id) + 1);
@@ -371,18 +378,88 @@ private:
         arma::mat K_i = Covariance * H_j.t() * K_i_sub.i();
 
         // Update state
-        arma::vec dz_j = z_j - z_j_hat;
+        arma::vec dz_j = z_j - z_k_hat;
         dz_j.at(1) = normalize_angle(dz_j.at(1));
         
         slam_state = slam_state + K_i * dz_j;
         slam_state.at(0) = normalize_angle(slam_state.at(0));
 
-
         // Update covariance based on marker
         arma::mat identity = arma::eye((max_obs * 2) + 3, (max_obs * 2) + 3);
         Covariance = (identity - K_i * H_j) * Covariance;
+
       }
     }
+
+  }
+
+  /// @brief Finds index of closest obstacle to a new obstacle
+  /// @param marker_x new obstacle x
+  /// @param marker_y new obstacle y
+  /// @return Index of closest obstacle
+  int associate_obs(double marker_x, double marker_y) 
+  {
+    const double rad = sqrt(pow(marker_x, 2) + pow(marker_y, 2));
+    const double phi = normalize_angle(atan2(marker_y, marker_x));
+    arma::vec z(2, arma::fill::zeros);
+    std::vector<double> maha_dist;
+    bool new_obs = false;
+
+    // Find maker position in map frame
+    const double marker_x_map = slam_state.at(1) + rad *
+      cos(normalize_angle(phi + slam_state.at(0)));
+    const double marker_y_map = slam_state.at(2) + rad *
+      sin(normalize_angle(phi + slam_state.at(0)));
+
+    // Do not create new obstacles if max obstacles created
+    if (num_obs != max_obs) {
+      // Fill in z with rad an phi
+      z.at(0) = rad;
+      z.at(1) = phi;
+      // Add current marker to state variable as if it was a new obstacle and increase num_obs
+      slam_state.at(3 + (2 * num_obs)) = marker_x_map;
+      slam_state.at(4 + (2 * num_obs)) = marker_y_map;
+      num_obs += 1;
+      new_obs = true;
+    }
+
+    // Iterate through obstacle measurementss
+    for (int i = 0; i < num_obs; i++) {
+
+      // Find Euclidian distance (works well enough here)
+      const double x_obs_est = slam_state.at(3 + (2 * i));
+      const double y_obs_est = slam_state.at(4 + (2 * i));
+      const double dist = sqrt(pow((x_obs_est - marker_x_map), 2) + pow((y_obs_est - marker_y_map), 2));
+      
+      // Add to maha_dist vector
+      maha_dist.push_back(dist);
+    }
+
+    // Set maha distance for new obstacle to be 0.25 m if new obs
+    if (new_obs) {
+      maha_dist.at(num_obs-1) = 0.25;
+    }
+
+
+    // Find minimum maha distance and get it's index
+    auto d_star = maha_dist.at(0);
+    int index = 0;
+    for (int i = 0; i < static_cast<int>(maha_dist.size()); i++) {
+      if (maha_dist.at(i) < d_star) {
+        d_star = maha_dist.at(i);
+        index = i;
+      }
+    }
+
+    // Check if index matches added obstacle, if so this is a new obstacle
+    if ((index != (num_obs - 1)) && (num_obs != max_obs)) {
+      num_obs += -1;
+      // clear out the obstacle
+      slam_state.at(3 + (2 * num_obs)) = 0.;
+      slam_state.at(4 + (2 * num_obs)) = 0.;
+    }
+
+    return index;
   }
 
   /// \brief Normalizes angles to range -pi to pi
