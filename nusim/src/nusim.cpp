@@ -2,7 +2,7 @@
 /// \brief Simulates the turtlebot in the environment
 ///
 /// PARAMETERS:
-///     rate (double): frequency of the timer (Hz)
+///     rate (int): frequency of the timer (Hz)
 ///     x0 (double): initial x position of the turtlebot (m)
 ///     y0 (double): initial y position of the turtlebot (m)
 ///     theta0 (double): initial theta angle of the turtlebot (rad)
@@ -13,7 +13,14 @@
 ///     arena_y_length (double): Y length of rectangular arena (m)
 ///     input_noise (double): the noise variance for moving the robot
 ///     slip_fraction (double): defines how much the wheels slip
-///     max_range (double): maximum simulated lidar range
+///     max_range (double): maximum simulated lidar range (m)
+///     min_range (double): minimum simulated lidar range (m)
+///     basic_sensor_variance (double): variance of fake publish obstacles
+///     collision_radius (double): collision radius of robot
+///     laser_noise (double): variance for laser scan data
+///     laser_samples (double): number of samples in laser scan
+///     draw_only (bool): if true, node only publishes walls
+///     publish_obs (bool): toggles publishing fake obstcles
 /// SUBSCRIBES:
 ///     ~/red/wheel_cmd (nuturtlebot_msgs::msg::WheelCommands): the commands for the wheel motors
 /// PUBLISHES:
@@ -59,9 +66,7 @@
 
 using namespace std::chrono_literals;
 
-class Nusim : public rclcpp::Node
-{
-public:
+class Nusim : public rclcpp::Nodedouble
   Nusim()
   : Node("nusim")
   {
@@ -85,9 +90,9 @@ public:
     declare_parameter("slip_fraction", 0.2);
     declare_parameter("max_range", 3.5);
     declare_parameter("min_range", 0.12);
-    declare_parameter("basic_sensor_variance", 0.001);
+    declare_parameter("basic_sensor_variance", 0.005);
     declare_parameter("collision_radius", 0.11);
-    declare_parameter("laser_noise", 0.00);//01);
+    declare_parameter("laser_noise", 0.0005);
     declare_parameter("laser_samples", 360);
     declare_parameter("draw_only", false);
     declare_parameter("publish_obs", false);

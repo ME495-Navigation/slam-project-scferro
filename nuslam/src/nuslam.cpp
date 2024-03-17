@@ -63,7 +63,7 @@ public:
     declare_parameter("track_width", -1.0);
     declare_parameter("max_obs", 10);
     declare_parameter("obstacle_radius", 0.038);
-    declare_parameter("obs_dist_thresh", 0.25);
+    declare_parameter("obs_dist_thresh", 0.4);
 
     // Define parameter variables
     loop_rate = get_parameter("rate").as_int();
