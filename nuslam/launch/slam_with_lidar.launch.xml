@@ -4,7 +4,7 @@
   <arg name="use_rviz" default="true"/>
 
   <!-- Launch slam launch file -->
-  <include file="$(find-pkg-share nuslam)/launch/slam.launch.xml" if="$(eval '\'$(var robot)\' != \'none\'')">
+  <include file="$(find-pkg-share nuslam)/launch/slam_fake_obs.launch.xml" if="$(eval '\'$(var robot)\' != \'none\'')">
     <arg name="use_rviz" value="true"/>
     <arg name="use_lidar" value="true"/>
     <arg name="cmd_src" value="$(var cmd_src)"/>

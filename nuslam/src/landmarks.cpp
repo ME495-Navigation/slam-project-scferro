@@ -67,7 +67,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub;
 
   /// @brief The wheel_cmd callback function, updates wheel speeds and robot ground truth position
-  /// @param msg (sensor_msgs::msg::LaserScan) the laser scan message 
+  /// @param msg (sensor_msgs::msg::LaserScan) the laser scan message
   void laser_callback(const sensor_msgs::msg::LaserScan & msg)
   {
     std::vector<turtlelib::Point2D> current_group;

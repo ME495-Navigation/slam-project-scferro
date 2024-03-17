@@ -9,7 +9,6 @@ def generate_launch_description():
     params_file_path = PathJoinSubstitution(
         [FindPackageShare("nuturtle_description"), "config", "diff_params.yaml"]
     )
-
     return Catch2LaunchDescription(
         [
             Node(
@@ -17,7 +16,6 @@ def generate_launch_description():
                 executable="turtle_control",
                 parameters=[ParameterFile(params_file_path)],
             ),
-
             Catch2IntegrationTestNode(
                 package="nuturtle_control",
                 executable="turtle_control_test",
