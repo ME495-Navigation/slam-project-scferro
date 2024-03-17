@@ -82,7 +82,7 @@ TEST_CASE("Pure rotation", "[turtle_control]")
   // Initialize message
   geometry_msgs::msg::Twist twist_msg;
   twist_msg.linear.x = 0.0;
-  twist_msg.angular.z = 0.25;
+  twist_msg.angular.z = -0.25;
 
   // Create publisher and subscriber
   auto cmd_vel_pub = node->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);

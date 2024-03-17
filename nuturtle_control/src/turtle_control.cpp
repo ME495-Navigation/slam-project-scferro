@@ -152,7 +152,7 @@ private:
     // Enter wheel commands into message
     wheel_commands.left_velocity = limit_cmd(wheel_cmd_left);
     wheel_commands.right_velocity = limit_cmd(wheel_cmd_right);
-    
+
     // Update wheel_speed_error_prev
     wheel_speed_error_left_prev = wheel_speed_error_left;
     wheel_speed_error_right_prev = wheel_speed_error_right;

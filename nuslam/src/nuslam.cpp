@@ -61,8 +61,9 @@ public:
     declare_parameter("wheel_right", "");
     declare_parameter("wheel_diameter", -1.0);
     declare_parameter("track_width", -1.0);
-    declare_parameter("max_obs", 5);
+    declare_parameter("max_obs", 10);
     declare_parameter("obstacle_radius", 0.038);
+    declare_parameter("obs_dist_thresh", 0.25);
 
     // Define parameter variables
     loop_rate = get_parameter("rate").as_int();
@@ -74,6 +75,7 @@ public:
     track_width = get_parameter("track_width").as_double();
     max_obs = get_parameter("max_obs").as_int();
     obstacle_radius = get_parameter("obstacle_radius").as_double();
+    obs_dist_thresh = get_parameter("obs_dist_thresh").as_double();
 
     // Check if parameters have been defined. if not, throw runtime error
     // Refer to Citation [2] ChatGPT
@@ -113,7 +115,9 @@ public:
 
     // Publishers
     odom_pub = create_publisher<nav_msgs::msg::Odometry>("green/odom", 10);
-    slam_obstacle_pub = create_publisher<visualization_msgs::msg::MarkerArray>("~/slam_obstacles", 10);
+    slam_obstacle_pub = create_publisher<visualization_msgs::msg::MarkerArray>(
+      "~/slam_obstacles",
+      10);
     path_pub = create_publisher<nav_msgs::msg::Path>("green/path", 10);
 
     // Subscribers
@@ -153,6 +157,7 @@ private:
   turtlelib::Transform2D tf_odom_body, tf_map_odom, tf_map_body;
   turtlelib::DiffDrive diff_drive = turtlelib::DiffDrive(wheel_diameter, track_width);
   int path_counter;
+  double obs_dist_thresh;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::TimerBase::SharedPtr path_timer;
@@ -195,15 +200,17 @@ private:
     tf_odom_body = turtlelib::Transform2D{{odom_state[0], odom_state[1]}, odom_state[2]};
 
     // Get tf_map_odom
-    tf_map_body = turtlelib::Transform2D{turtlelib::Vector2D{slam_state.at(1), slam_state.at(2)}, slam_state.at(0)};
-    tf_map_odom =  tf_map_body * tf_odom_body.inv();
+    tf_map_body =
+      turtlelib::Transform2D{turtlelib::Vector2D{slam_state.at(1), slam_state.at(2)}, slam_state.at(
+        0)};
+    tf_map_odom = tf_map_body * tf_odom_body.inv();
 
     // Create tf message
     geometry_msgs::msg::TransformStamped tf_map_odom_msg;
     tf_map_odom_msg.header.stamp = get_clock()->now();
     tf_map_odom_msg.header.frame_id = "map";
     tf_map_odom_msg.child_frame_id = "odom";
-    
+
     // Fill out tf message
     tf_map_odom_msg.transform.translation.x = tf_map_odom.translation().x;
     tf_map_odom_msg.transform.translation.y = tf_map_odom.translation().y;
@@ -297,13 +304,13 @@ private:
 
     // Make a tf for the robot in the odom frame
     tf_odom_body = turtlelib::Transform2D{{odom_state[0], odom_state[1]}, odom_state[2]};
-    
+
     // get the robot position in the map frame
     tf_map_body = tf_map_odom * tf_odom_body;
     slam_state.at(0) = normalize_angle(tf_map_body.rotation());
     slam_state.at(1) = tf_map_body.translation().x;
     slam_state.at(2) = tf_map_body.translation().y;
-    
+
     // Calculate change in x and y positions
     delta_x = slam_state.at(1) - slam_state_prev.at(1);
     delta_y = slam_state.at(2) - slam_state_prev.at(2);
@@ -319,7 +326,7 @@ private:
     // Update Covariance matrix with A_t
     Covariance = (A_t * Covariance * A_t.t()) + Q_bar;
 
-    // Add marker positions to measurement 
+    // Add marker positions to measurement
     for (size_t i = 0; i < msg.markers.size(); i++) {
       // extract coordinates, id, and action from message
       marker_x = msg.markers.at(i).pose.position.x;
@@ -380,7 +387,7 @@ private:
         // Update state
         arma::vec dz_j = z_j - z_k_hat;
         dz_j.at(1) = normalize_angle(dz_j.at(1));
-        
+
         slam_state = slam_state + K_i * dz_j;
         slam_state.at(0) = normalize_angle(slam_state.at(0));
 
@@ -397,12 +404,11 @@ private:
   /// @param marker_x new obstacle x
   /// @param marker_y new obstacle y
   /// @return Index of closest obstacle
-  int associate_obs(double marker_x, double marker_y) 
+  int associate_obs(double marker_x, double marker_y)
   {
     const double rad = sqrt(pow(marker_x, 2) + pow(marker_y, 2));
     const double phi = normalize_angle(atan2(marker_y, marker_x));
-    arma::vec z(2, arma::fill::zeros);
-    std::vector<double> maha_dist;
+    std::vector<double> dist_vect;
     bool new_obs = false;
 
     // Find maker position in map frame
@@ -413,9 +419,6 @@ private:
 
     // Do not create new obstacles if max obstacles created
     if (num_obs != max_obs) {
-      // Fill in z with rad an phi
-      z.at(0) = rad;
-      z.at(1) = phi;
       // Add current marker to state variable as if it was a new obstacle and increase num_obs
       slam_state.at(3 + (2 * num_obs)) = marker_x_map;
       slam_state.at(4 + (2 * num_obs)) = marker_y_map;
@@ -429,24 +432,25 @@ private:
       // Find Euclidian distance (works well enough here)
       const double x_obs_est = slam_state.at(3 + (2 * i));
       const double y_obs_est = slam_state.at(4 + (2 * i));
-      const double dist = sqrt(pow((x_obs_est - marker_x_map), 2) + pow((y_obs_est - marker_y_map), 2));
-      
-      // Add to maha_dist vector
-      maha_dist.push_back(dist);
+      const double dist =
+        sqrt(pow((x_obs_est - marker_x_map), 2) + pow((y_obs_est - marker_y_map), 2));
+
+      // Add to dist_vect vector
+      dist_vect.push_back(dist);
     }
 
-    // Set maha distance for new obstacle to be 0.25 m if new obs
+    // Set distance for new obstacle to be 0.25 m if new obs
     if (new_obs) {
-      maha_dist.at(num_obs-1) = 0.25;
+      dist_vect.at(num_obs - 1) = obs_dist_thresh;
     }
 
 
-    // Find minimum maha distance and get it's index
-    auto d_star = maha_dist.at(0);
+    // Find minimum distance and get it's index
+    auto d_star = dist_vect.at(0);
     int index = 0;
-    for (int i = 0; i < static_cast<int>(maha_dist.size()); i++) {
-      if (maha_dist.at(i) < d_star) {
-        d_star = maha_dist.at(i);
+    for (int i = 0; i < static_cast<int>(dist_vect.size()); i++) {
+      if (dist_vect.at(i) < d_star) {
+        d_star = dist_vect.at(i);
         index = i;
       }
     }

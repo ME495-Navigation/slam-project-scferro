@@ -87,8 +87,8 @@ TEST_CASE("Integrate twist, both wheel rotate forwards (pure translation)", "[Di
     twist.x = 1;
     wheel_speeds = diff_drive.inverse_kinematics(twist);
 
-    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(3.1830988618, 1e-5));
-    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(3.1830988618, 1e-5));
+    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(20., 1e-5));
+    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(20., 1e-5));
 }
 
 TEST_CASE("Integrate twist, wheels spin opposite directions (pure rotation)", "[DiffDrive]") // Stephen Ferro
@@ -99,8 +99,8 @@ TEST_CASE("Integrate twist, wheels spin opposite directions (pure rotation)", "[
     twist.omega = PI;
     wheel_speeds = diff_drive.inverse_kinematics(twist);
 
-    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(-2.5, 1e-5));
-    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(2.5, 1e-5));
+    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(-15.7079632679, 1e-5));
+    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(15.7079632679, 1e-5));
 }
 
 TEST_CASE("Integrate twist, wheels spin different speeds (drive in an LH arc)", "[DiffDrive]") // Stephen Ferro
@@ -112,8 +112,8 @@ TEST_CASE("Integrate twist, wheels spin different speeds (drive in an LH arc)", 
     twist.x = 1;
     wheel_speeds = diff_drive.inverse_kinematics(twist);
 
-    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(0.6830988618, 1e-5));
-    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(5.6830988618, 1e-5));
+    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(4.2920367321, 1e-5));
+    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(35.7079632679, 1e-5));
 }
 
 TEST_CASE("Integrate twist, wheels spin different speeds (drive in an RH arc)", "[DiffDrive]") // Stephen Ferro
@@ -125,8 +125,8 @@ TEST_CASE("Integrate twist, wheels spin different speeds (drive in an RH arc)", 
     twist.x = 1;
     wheel_speeds = diff_drive.inverse_kinematics(twist);
 
-    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(0.6830988618, 1e-5));
-    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(5.6830988618, 1e-5));
+    REQUIRE_THAT(wheel_speeds[1], Catch::Matchers::WithinAbs(4.2920367321, 1e-5));
+    REQUIRE_THAT(wheel_speeds[0], Catch::Matchers::WithinAbs(35.7079632679, 1e-5));
 }
 
 TEST_CASE("Integrate twist, invalid twist (y != 0)", "[DiffDrive]") // Stephen Ferro

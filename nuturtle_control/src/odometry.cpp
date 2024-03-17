@@ -200,9 +200,9 @@ private:
     tf.transform.rotation.w = quaternion.w();
 
     tf_broadcaster->sendTransform(tf);
-    
+
     // Add current pose to path and publish path
-    update_path();\
+    update_path();
   }
 
   /// \brief The joint_state callback function, updates the stored wheel position
@@ -234,7 +234,7 @@ private:
   void update_path()
   {
     std::vector<double> state;
-    
+
     // Update odometry blue turtle path
     odom_path.header.stamp = get_clock()->now();
     odom_path.header.frame_id = "nusim/world";

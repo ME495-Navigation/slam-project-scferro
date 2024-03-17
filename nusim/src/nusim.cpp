@@ -123,7 +123,7 @@ public:
     diff_drive = turtlelib::DiffDrive(wheel_radius, track_width);
     right_wheel_vel = 0.;
     left_wheel_vel = 0.;
-    wheel_angles_no_slip = {0.,0.};
+    wheel_angles_no_slip = {0., 0.};
 
     // Create noise and slip ranges
     noise_range = std::normal_distribution<>{0, sqrt(input_noise)};
@@ -277,7 +277,7 @@ private:
       publish_sensor_data(wheel_angles_no_slip[0], wheel_angles_no_slip[1]);
 
       // Add current pose to path and publish path
-      if ((timestep % (loop_rate / pose_rate))==0) {
+      if ((timestep % (loop_rate / pose_rate)) == 0) {
         update_path();
       }
 
@@ -312,7 +312,7 @@ private:
     double x_max, y_max, slope, a, b, c;
     std::string frame_id = "red/base_scan";
     std::vector<float> ranges;
-    
+
     // Basic laser msg data
     laser.header.frame_id = frame_id;
     laser.angle_min = 0.0;
@@ -339,7 +339,9 @@ private:
         // Set equation for obstacle equal to equation for ray and solve with quadratic formula
         a = 1 + pow(slope, 2);
         b = 2 * ((y_gt - obstacles_y.at(i) - (slope * x_gt)) * slope - obstacles_x.at(i));
-        c = obstacles_x.at(i) * obstacles_x.at(i) + pow((y_gt - obstacles_y.at(i) - (slope * x_gt)), 2) - pow(obstacles_radius, 2);
+        c = obstacles_x.at(i) * obstacles_x.at(i) + pow(
+          (y_gt - obstacles_y.at(
+            i) - (slope * x_gt)), 2) - pow(obstacles_radius, 2);
 
         // Check if there are solutions
         double disc = b * b - 4 * a * c;
@@ -353,8 +355,10 @@ private:
           double dist2 = sqrt(pow(x_gt - x2, 2) + pow(y_gt - y2, 2));
 
           // Check if intersection point is within valid measurement range
-          bool check1 = ((x1 < x_gt && x1 > x_max) || (x1 > x_gt && x1 < x_max)) && ((y1 < y_gt && y1 > y_max) || (y1 > y_gt && y1 < y_max));
-          bool check2 = ((x2 < x_gt && x2 > x_max) || (x2 > x_gt && x2 < x_max)) && ((y2 < y_gt && y2 > y_max) || (y2 > y_gt && y2 < y_max));
+          bool check1 = ((x1<x_gt && x1> x_max) || (x1 > x_gt && x1 < x_max)) &&
+            ((y1<y_gt && y1> y_max) || (y1 > y_gt && y1 < y_max));
+          bool check2 = ((x2<x_gt && x2> x_max) || (x2 > x_gt && x2 < x_max)) &&
+            ((y2<y_gt && y2> y_max) || (y2 > y_gt && y2 < y_max));
 
           // Select valid solution closer to robot
           if (((dist1 < max_range) && (dist1 < dist2)) && check1) {
@@ -366,7 +370,7 @@ private:
       }
 
       // Check for intersection with walls
-      // wall 1, RH side 
+      // wall 1, RH side
       double x_w1 = 0.5 * arena_x_length;
       double y_w1 = slope * (x_w1 - x_gt) + y_gt;
       bool check_w1 = (x_gt <= x_w1) && (x_w1 <= x_max);
@@ -375,7 +379,7 @@ private:
         measurement = dist_w1;
       }
 
-      // wall 2, top side 
+      // wall 2, top side
       double y_w2 = 0.5 * arena_y_length;
       double x_w2 = (1.0 / slope) * (y_w2 - y_gt) + x_gt;
       bool check_w2 = (y_gt <= y_w2) && (y_w2 <= y_max);
@@ -384,7 +388,7 @@ private:
         measurement = dist_w2;
       }
 
-      // wall 3, LH side 
+      // wall 3, LH side
       double x_w3 = -0.5 * arena_x_length;
       double y_w3 = slope * (x_w3 - x_gt) + y_gt;
       bool check_w3 = (x_gt >= x_w3) && (x_w3 >= x_max);
@@ -393,7 +397,7 @@ private:
         measurement = dist_w3;
       }
 
-      // wall 4, bottom side 
+      // wall 4, bottom side
       double y_w4 = -0.5 * arena_y_length;
       double x_w4 = (1.0 / slope) * (y_w4 - y_gt) + x_gt;
       bool check_w4 = (y_gt >= y_w4) && (y_w4 >= y_max);
@@ -410,7 +414,7 @@ private:
     }
 
     laser.ranges = ranges;
-    
+
     // Publish laser message
     laser_pub->publish(laser);
   }
@@ -435,7 +439,8 @@ private:
       marker.type = 3;       // cylinder
 
       // Check marker distance, delete if out of range
-      double obstacle_dist = sqrt(pow((x_gt - obstacles_x.at(i)), 2) + pow((y_gt - obstacles_y.at(i)), 2));
+      double obstacle_dist =
+        sqrt(pow((x_gt - obstacles_x.at(i)), 2) + pow((y_gt - obstacles_y.at(i)), 2));
       if (obstacle_dist > max_range) {
         marker.action = 2; // delete
       } else {
@@ -457,12 +462,12 @@ private:
       turtlelib::Transform2D tf_world_obs =
         turtlelib::Transform2D{{obstacles_x.at(i), obstacles_y.at(i)},
         0.0};
-      
+
       // get the obstacle location relative to the robot frame
       const auto tf_sim_obs = tf_sim_world * tf_world_obs;
       marker.pose.position.x = tf_sim_obs.translation().x;
       marker.pose.position.y = tf_sim_obs.translation().y;
-      
+
       marker.pose.position.x += sensor_range(get_random());
       marker.pose.position.y += sensor_range(get_random());
       marker.pose.position.z = 0.125;
@@ -506,8 +511,9 @@ private:
   void check_collisions()
   {
     for (u_int i = 0; i < obstacles_x.size(); i++) {
-      double obstacle_dist = sqrt(pow((x_gt - obstacles_x.at(i)), 2) + pow((y_gt - obstacles_y.at(i)), 2));
-      
+      double obstacle_dist =
+        sqrt(pow((x_gt - obstacles_x.at(i)), 2) + pow((y_gt - obstacles_y.at(i)), 2));
+
       // If collided, shift robot tangent to obstacle
       if (obstacle_dist < collision_radius + obstacles_radius) {
         const auto ux = (x_gt - obstacles_x.at(i)) / obstacle_dist;

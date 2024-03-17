@@ -52,7 +52,7 @@ Task V.4 - Simulated Robot With SLAM config: COMPLETE
 
 Task L.1 - Main SLAM Results: COMPLETE
 Task L.2 - SLAM in controlled environment: COMPLETE
-Task L.3 - SLAM with unknown data: IN PROGRESS
+Task L.3 - SLAM with unknown data: COMPLETE
 Task L.4 - SLAM IRL: IN PROGRESS
 
 Task S.1 - Implement Landmark Detection: COMPLETE
