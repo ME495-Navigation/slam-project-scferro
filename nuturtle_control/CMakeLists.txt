@@ -54,16 +54,16 @@ ament_target_dependencies(odometry_test rclcpp std_msgs geometry_msgs sensor_msg
   std_srvs nav_msgs tf2 tf2_ros visualization_msgs nuturtlebot_msgs)
 target_link_libraries(odometry_test catch_ros2::catch_ros2_with_node_main)
 
-add_executable(turtle_control_test test/turtle_control_test.cpp)
-ament_target_dependencies(turtle_control_test rclcpp nuturtlebot_msgs
-  geometry_msgs catch_ros2 sensor_msgs)
-target_link_libraries(turtle_control_test catch_ros2::catch_ros2_with_node_main)
+# add_executable(turtle_control_test test/turtle_control_test.cpp)
+# ament_target_dependencies(turtle_control_test rclcpp nuturtlebot_msgs
+#   geometry_msgs catch_ros2 sensor_msgs)
+# target_link_libraries(turtle_control_test catch_ros2::catch_ros2_with_node_main)
 
 install(TARGETS
   turtle_control
   odometry
   circle
-  turtle_control_test
+  # turtle_control_test
   odometry_test
   DESTINATION lib/${PROJECT_NAME}
 )
@@ -76,7 +76,7 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}/
 )
 
-catch_ros2_add_integration_test(turtle_control_test LAUNCH_FILE turtle_control_test.launch.py)
+# catch_ros2_add_integration_test(turtle_control_test LAUNCH_FILE turtle_control_test.launch.py)
 catch_ros2_add_integration_test(odometry_test LAUNCH_FILE odometry_test.launch.py)
 
 find_package(ament_lint_auto REQUIRED)

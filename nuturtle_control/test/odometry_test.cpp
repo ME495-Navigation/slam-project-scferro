@@ -7,8 +7,9 @@
 
 using namespace std::chrono_literals;
 
-auto tf_found{false};
-auto srv_found{false};
+// Initialize variables
+bool tf_found = false;
+bool srv_found = false;
 
 TEST_CASE("odom->base_footprint transform", "[odometry]") {
   auto node = rclcpp::Node::make_shared("odometry_test_node");
