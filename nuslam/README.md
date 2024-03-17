@@ -34,6 +34,6 @@ Below is an example of doing SLAM with the turtlebot3 in the RViz NuSim simulati
 ### SLAM Using LIDAR Data in on the Real TurtleBot
 Here is a demonstration of the the NuSLAM package running on the real turtlebot 3 burger. Similarly to the simulation, the robot is able to fairly accurately detect obstacles and track it's position using the lidar data. It is especially accurate when the robot is within the cluster of obstacles. When it drives further away, it qucikly loses track of it's position. However, once it returns to the cluster, it is able to relocate itself. I even crashed the robot into a fixed obstacle and continued driving to throw off the odometry position estimate, but the robot was still able to relocate itself fairly accurately.
 
-[![LINK TO YOUTUBE](https://i9.ytimg.com/vi_webp/rpW0WM7pRoI/sddefault.webp?v=65f6f89f&sqp=CLjz268G&rs=AOn4CLALxySIM04DnVomrZTA6pflVG2m7A)](https://www.youtube.com/watch?v=rpW0WM7pRoI)
+[![LINK TO YOUTUBE](https://i9.ytimg.com/vi_webp/JjyP8bdBT1g/sddefault.webp?v=65f6f89f&sqp=CLjz268G&rs=AOn4CLALxySIM04DnVomrZTA6pflVG2m7A)](https://www.youtube.com/watch?v=JjyP8bdBT1g)
 
 Do to network issues, there was a lot of lag when controlling the robot when I was making this video, so it was difficult to get the robot back to it's exact starting position. The final coordinates of the slam estimate of the robot fluctuated, but they were approximately x ~= -0.3 and y ~= 0.1. This very closely matched the robot's true final position relative to the start point, demonstrating successful localization with SLAM.
