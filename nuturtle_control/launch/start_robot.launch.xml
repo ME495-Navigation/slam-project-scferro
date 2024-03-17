@@ -5,6 +5,7 @@
     <arg name="use_rviz" default="true"/>
     <arg name="world_config_file" default="basic_world.yaml"/>
     <arg name="odom_frame" default="odom"/>
+    <arg name="fake_obstacles" default="true"/>
 
     <!-- Launch rviz node if use_rviz==true and robot==localhost -->
     <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nuturtle_control)/config/nuturtle_control_nusim.rviz" if="$(eval '\'$(var use_rviz)\' == \'true\' and \'$(var robot)\' == \'nusim\'')"/>
@@ -15,6 +16,7 @@
     <!-- Launch nusim launch file if robot==nusim -->
     <include file="$(find-pkg-share nusim)/launch/nusim.launch.xml" if="$(eval '\'$(var robot)\' == \'nusim\'')">
         <arg name="use_rviz_sim" value="false" />
+        <arg name="publish_obs" value="$(var fake_obstacles)" />
     </include>
 
     <!-- Launch nusim node to broadcast walls and obstacles if robot!=nusim -->

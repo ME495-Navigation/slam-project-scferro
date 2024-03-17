@@ -3,6 +3,7 @@
     <arg name="cmd_src" default="teleop"/>
     <arg name="robot" default="nusim"/>
     <arg name="use_rviz" default="true"/>
+    <arg name="fake_obstacles" default="true"/>
 
     <!-- Launch rviz -->
      <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share nuslam)/config/slam.rviz" if="$(eval '\'$(var robot)\' == \'nusim\' and \'$(var use_rviz)\' == \'true\'')"/>
@@ -13,6 +14,7 @@
         <arg name="robot" value="$(var robot)"/>
         <arg name="use_rviz" value="false"/>
         <arg name="odom_frame" value="map"/>
+        <arg name="fake_obstacles" value="$(var fake_obstacles)"/>
     </include>
 
     <!-- Load green robot if robot!=none -->

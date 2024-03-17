@@ -9,6 +9,7 @@
     <arg name="use_lidar" value="true"/>
     <arg name="cmd_src" value="$(var cmd_src)"/>
     <arg name="robot" value="$(var robot)"/>
+        <arg name="fake_obstacles" value="false"/>
   </include>
 
   <!-- Launch landmark detection node -->

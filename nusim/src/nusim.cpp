@@ -66,7 +66,9 @@
 
 using namespace std::chrono_literals;
 
-class Nusim : public rclcpp::Nodedouble
+class Nusim : public rclcpp::Node
+{
+public:
   Nusim()
   : Node("nusim")
   {

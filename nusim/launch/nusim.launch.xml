@@ -2,10 +2,12 @@
     <!-- Arguments -->
     <arg name="config_file" default="basic_world.yaml"/>
     <arg name="use_rviz_sim" default="true"/>
+    <arg name="publish_obs" default="false"/>
 
     <!-- Launch nusim node -->
     <node pkg="nusim" exec="nusim" name="nusim">
         <param from="$(find-pkg-share nusim)/config/$(var config_file)"/>
+        <param name="publish_obs" value="$(var publish_obs)"/>
     </node>
 
     <!-- Run load_one.launch.py from nuturtle_description package -->
