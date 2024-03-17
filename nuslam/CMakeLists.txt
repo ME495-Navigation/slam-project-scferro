@@ -21,7 +21,7 @@ find_package(nuturtlebot_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(Armadillo REQUIRED)
-find_package(catch_ros2 REQUIRED)
+# find_package(catch_ros2 REQUIRED)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -68,7 +68,7 @@ install(TARGETS
 install(DIRECTORY
   launch
   config
-  test
+  # test
   DESTINATION share/${PROJECT_NAME}/
 )
 

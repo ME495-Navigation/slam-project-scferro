@@ -1,0 +1,9 @@
+<launch>
+
+  <!-- Launch slam launch file -->
+  <include file="$(find-pkg-share nuslam)/launch/slam_with_lidar.launch.xml" if="$(eval '\'$(var robot)\' != \'none\'')">
+    <arg name="use_rviz" value="true"/>
+    <arg name="robot" value="none"/>
+  </include>
+
+</launch>

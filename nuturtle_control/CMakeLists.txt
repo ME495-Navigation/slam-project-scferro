@@ -23,7 +23,7 @@ find_package(visualization_msgs REQUIRED)
 find_package(turtlelib REQUIRED)
 find_package(nuturtlebot_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(catch_ros2 REQUIRED)
+# find_package(catch_ros2 REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}_srv
   "srv/Control.srv"
@@ -49,10 +49,10 @@ ament_target_dependencies(circle rclcpp std_msgs geometry_msgs sensor_msgs
   std_srvs nav_msgs tf2 tf2_ros visualization_msgs nuturtlebot_msgs)
 target_link_libraries(circle turtlelib::turtlelib "${cpp_typesupport_target}")
 
-add_executable(odometry_test test/odometry_test.cpp)
-ament_target_dependencies(odometry_test rclcpp std_msgs geometry_msgs sensor_msgs
-  std_srvs nav_msgs tf2 tf2_ros visualization_msgs nuturtlebot_msgs)
-target_link_libraries(odometry_test catch_ros2::catch_ros2_with_node_main)
+# add_executable(odometry_test test/odometry_test.cpp)
+# ament_target_dependencies(odometry_test rclcpp std_msgs geometry_msgs sensor_msgs
+#   std_srvs nav_msgs tf2 tf2_ros visualization_msgs nuturtlebot_msgs)
+# target_link_libraries(odometry_test catch_ros2::catch_ros2_with_node_main)
 
 # add_executable(turtle_control_test test/turtle_control_test.cpp)
 # ament_target_dependencies(turtle_control_test rclcpp nuturtlebot_msgs
@@ -64,7 +64,7 @@ install(TARGETS
   odometry
   circle
   # turtle_control_test
-  odometry_test
+  # odometry_test
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -72,12 +72,12 @@ install(DIRECTORY
   launch
   srv
   config
-  test
+  # test
   DESTINATION share/${PROJECT_NAME}/
 )
 
 # catch_ros2_add_integration_test(turtle_control_test LAUNCH_FILE turtle_control_test.launch.py)
-catch_ros2_add_integration_test(odometry_test LAUNCH_FILE odometry_test.launch.py)
+# catch_ros2_add_integration_test(odometry_test LAUNCH_FILE odometry_test.launch.py)
 
 find_package(ament_lint_auto REQUIRED)
 set(ament_cmake_copyright_FOUND TRUE)

@@ -18,18 +18,21 @@
         <arg name="use_rviz_sim" value="false" />
         <arg name="publish_obs" value="$(var fake_obstacles)" />
     </include>
+    
+    <!-- Publish a static TF between the odom and world frames-->
+    <node pkg="tf2_ros" exec="static_transform_publisher" args="0 0 0 0 0 0 1 /nusim/world /odom"/>
 
     <!-- Launch nusim node to broadcast walls and obstacles if robot!=nusim -->
-    <node pkg="nusim" exec="nusim" name="nusim" if="$(eval '\'$(var robot)\' != \'nusim\'')">
+    <!-- <node pkg="nusim" exec="nusim" name="nusim" if="$(eval '\'$(var robot)\' != \'nusim\'')">
         <param from="$(find-pkg-share nusim)/config/$(var world_config_file)"/>
         <param name="draw_only" value="true" />
-    </node>
+    </node> -->
 
     <!-- Load the blue turtle -->
     <include file="$(find-pkg-share nuturtle_description)/launch/load_one.launch.py" >
         <arg name="use_rviz" value="false" />
         <arg name="color" value="blue" />
-        <arg name="use_jsp" value="true" />
+        <arg name="use_jsp" value="$(var use_rviz)" />
     </include>
 
     <!-- Launch circle node if cmd_src==circle -->
@@ -50,8 +53,8 @@
         <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
     </node>
     
-    <!-- Launch odometry node if robot!=localhost -->
-    <node pkg="nuturtle_control" exec="odometry" if="$(eval '\'$(var robot)\' != \'localhost\'')">
+    <!-- Launch odometry node if robot!=none -->
+    <node pkg="nuturtle_control" exec="odometry" if="$(eval '\'$(var robot)\' != \'none\'')">
         <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
         <param name="body_id" value="blue/base_footprint" />
         <param name="odom_id" value="$(var odom_frame)" />
@@ -64,8 +67,5 @@
 
     <!-- Launch numsr_turtlebot node if robot==localhost -->
     <include file="$(find-pkg-share hls_lfcd_lds_driver)/launch/hlds_laser.launch.py" if="$(eval '\'$(var robot)\' == \'localhost\'')"/>
-    
-    <!-- Publish a static TF between the odom and world frames-->
-    <node pkg="tf2_ros" exec="static_transform_publisher" args="0 0 0 0 0 0 1 /nusim/world /odom"/>
 
 </launch>

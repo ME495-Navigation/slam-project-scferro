@@ -38,20 +38,30 @@ public:
     declare_parameter("std_dev_thresh", 0.4);
     declare_parameter("mean_lo_thresh", 1.4);
     declare_parameter("mean_hi_thresh", 2.6);
+    declare_parameter("real_laser", false);
 
     // Define parameter variables
     group_threshold = get_parameter("group_threshold").as_double();
     std_dev_thresh = get_parameter("std_dev_thresh").as_double();
     mean_lo_thresh = get_parameter("mean_lo_thresh").as_double();
     mean_hi_thresh = get_parameter("mean_hi_thresh").as_double();
+    real_laser = get_parameter("real_laser").as_bool();
 
     // Publishers
     obstacles_pub = create_publisher<visualization_msgs::msg::MarkerArray>("detected_obs", 10);
 
     // Subscribers
-    laser_sub = create_subscription<sensor_msgs::msg::LaserScan>(
-      "scan",
-      10, std::bind(&Landmarks::laser_callback, this, std::placeholders::_1));
+    // Set QOS correctly for robot
+    if (real_laser) {
+      laser_sub = create_subscription<sensor_msgs::msg::LaserScan>(
+        "scan", rclcpp::SensorDataQoS(), std::bind(
+          &Landmarks::laser_callback, this,
+          std::placeholders::_1));
+    } else {
+      laser_sub = create_subscription<sensor_msgs::msg::LaserScan>(
+        "scan",
+        10, std::bind(&Landmarks::laser_callback, this, std::placeholders::_1));
+    }
   }
 
 private:
@@ -61,6 +71,7 @@ private:
   std::vector<std::vector<turtlelib::Point2D>> groups;
   std::vector<turtlelib::Circle2D> obstacle_list;
   builtin_interfaces::msg::Time msg_stamp;
+  bool real_laser;
 
   // Create ROS publishers, timers, broadcasters, etc.
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstacles_pub;

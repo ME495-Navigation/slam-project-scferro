@@ -5,14 +5,30 @@
 
   <!-- Launch slam launch file -->
   <include file="$(find-pkg-share nuslam)/launch/slam_fake_obs.launch.xml" if="$(eval '\'$(var robot)\' != \'none\'')">
-    <arg name="use_rviz" value="true"/>
+    <arg name="use_rviz" value="$(var use_rviz)"/>
     <arg name="use_lidar" value="true"/>
     <arg name="cmd_src" value="$(var cmd_src)"/>
     <arg name="robot" value="$(var robot)"/>
-        <arg name="fake_obstacles" value="false"/>
+    <arg name="fake_obstacles" value="false"/>
   </include>
 
-  <!-- Launch landmark detection node -->
-  <node pkg="nuslam" exec="landmarks"/>
+  <!-- Launch landmark detection node if robot==localhost  -->
+  <node pkg="nuslam" exec="landmarks" if="$(eval '\'$(var robot)\' == \'localhost\'')">
+    <param name="real_laser" value="true"/>
+  </node>
+
+  <!-- Launch landmark detection node if robot==nusim  -->
+  <node pkg="nuslam" exec="landmarks" if="$(eval '\'$(var robot)\' == \'nusim\'')">
+    <param name="real_laser" value="false"/>
+  </node>
+
+  <!-- Launch teleop node if cmd_src==teleop and if robot!=none  -->
+  <node pkg="teleop_twist_keyboard" exec="teleop_twist_keyboard" output="screen" 
+    launch-prefix="xterm -e" if="$(eval '\'$(var robot)\' == \'none\' and \'$(var cmd_src)\' == \'teleop\'')"/>
+
+  <!-- Launch rviz if robot==none -->
+    <node pkg="rviz2" exec="rviz2" 
+    args="-d $(find-pkg-share nuslam)/config/slam.rviz" 
+    if="$(eval '\'$(var robot)\' == \'none\' and \'$(var use_rviz)\' == \'true\'')"/>
 
 </launch>
