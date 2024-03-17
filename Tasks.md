@@ -37,7 +37,7 @@ Task D.3 - Diff Drive Documentation: IN PROGRESS
 Task E.1 - Create turtle_control node: COMPLETE
 Task E.2 - Create odometry node: COMPLETE
 Task E.3 - Create circle node: COMPLETE
-Task E.4 - ROS2 API Testing: IN PROGRESS
+Task E.4 - ROS2 API Testing: COMPLETE
 Task E.4 - Launchfile: COMPLETE
 
 Task F.1 - Turtlebot Setup: COMPLETE

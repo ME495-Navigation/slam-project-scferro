@@ -21,6 +21,7 @@ find_package(nuturtlebot_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(Armadillo REQUIRED)
+find_package(catch_ros2 REQUIRED)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -52,17 +53,32 @@ ament_target_dependencies(landmarks rclcpp std_msgs geometry_msgs sensor_msgs
 include_directories(${ARMADILLO_INCLUDE_DIRS})
 target_link_libraries(landmarks turtlelib::turtlelib ${ARMADILLO_LIBRARIES} "${cpp_typesupport_target}")
 
+add_executable(circle_test test/circle_test.cpp)
+ament_target_dependencies(circle_test rclcpp std_msgs geometry_msgs sensor_msgs
+  visualization_msgs nuturtlebot_msgs nav_msgs Armadillo)
+target_link_libraries(circle_test catch_ros2::catch_ros2_with_node_main)
+
 
 install(TARGETS
   nuslam
   landmarks
+  circle_test
   DESTINATION lib/${PROJECT_NAME}
 )
 
 install(DIRECTORY
   launch
   config
+  test
   DESTINATION share/${PROJECT_NAME}/
 )
+
+catch_ros2_add_integration_test(circle_test LAUNCH_FILE circle_test.launch.py)
+
+find_package(ament_lint_auto REQUIRED)
+set(ament_cmake_copyright_FOUND TRUE)
+set(ament_cmake_cpplint_FOUND TRUE)
+ament_lint_auto_find_test_dependencies()
+
 
 ament_package()

@@ -50,13 +50,14 @@ ament_target_dependencies(circle rclcpp std_msgs geometry_msgs sensor_msgs
 target_link_libraries(circle turtlelib::turtlelib "${cpp_typesupport_target}")
 
 add_executable(turtle_control_test test/turtle_control_test.cpp)
+ament_target_dependencies(turtle_control_test rclcpp nuturtlebot_msgs
+  geometry_msgs catch_ros2 sensor_msgs)
 target_link_libraries(turtle_control_test catch_ros2::catch_ros2_with_node_main)
-ament_target_dependencies(turtle_control_test rclcpp nuturtlebot_msgs geometry_msgs catch_ros2 sensor_msgs)
 
 add_executable(odometry_test test/odometry_test.cpp)
-target_link_libraries(odometry_test catch_ros2::catch_ros2_with_node_main)
 ament_target_dependencies(odometry_test rclcpp std_msgs geometry_msgs sensor_msgs
   std_srvs nav_msgs tf2 tf2_ros visualization_msgs nuturtlebot_msgs)
+target_link_libraries(odometry_test catch_ros2::catch_ros2_with_node_main)
 
 install(TARGETS
   turtle_control

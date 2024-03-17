@@ -17,11 +17,11 @@
   <!-- Launch RViz if robot==nusim  -->
   <node pkg="rviz2" exec="rviz2"
     if="$(eval '\'$(var robot)\' == \'nusim\' and \'$(var use_rviz)\' == \'true\'')"
-    args="-d $(find-pkg-share nuslam)/config/landmarks.rviz"/>
+    args="-d $(find-pkg-share nuslam)/config/slam.rviz"/>
 
   <!-- Launch RViz if robot==none  -->
   <node pkg="rviz2" exec="rviz2"
     if="$(eval '\'$(var robot)\' == \'none\' and \'$(var use_rviz)\' == \'true\'')"
-    args="-d $(find-pkg-share nuslam)/config/slam_real.rviz"/>
+    args="-d $(find-pkg-share nuslam)/config/slam.rviz"/>
 
 </launch>

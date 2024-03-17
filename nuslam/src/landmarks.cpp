@@ -2,8 +2,10 @@
 /// \brief Detects circles in lidar scan data
 ///
 /// PARAMETERS:
-///     use_real_lidar (bool): subscribe to real or simulated lidar data
-///     grouping_threshold (bool): threshold value for creating groups of points from lidar scan
+///     group_threshold (bool): threshold value for creating groups of points from lidar scan
+///     std_dev_thresh (double): threshold value for angle std dev when detecting circles
+///     mean_lo_thresh (double): lower threshold value for angle mean when detecting circles
+///     mean_hi_thresh (double): upper threshold value for angle mean when detecting circles
 /// PUBLISHES:
 ///     detected_obs (visualization_msgs::msg::MarkerArray): circle detection results
 /// SUBSCRIBES:
@@ -24,7 +26,7 @@
 #include "turtlelib/geometry2d.hpp"
 #include "builtin_interfaces/msg/time.hpp"
 
-
+/// @brief The landmarks node
 class Landmarks : public rclcpp::Node
 {
 public:
@@ -64,7 +66,8 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr obstacles_pub;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub;
 
-  /// \brief The wheel_cmd callback function, updates wheel speeds and robot ground truth position
+  /// @brief The wheel_cmd callback function, updates wheel speeds and robot ground truth position
+  /// @param msg (sensor_msgs::msg::LaserScan) the laser scan message 
   void laser_callback(const sensor_msgs::msg::LaserScan & msg)
   {
     std::vector<turtlelib::Point2D> current_group;
@@ -125,7 +128,7 @@ private:
     // Detect circles in grouped points
     detect_circles();
 
-    RCLCPP_INFO(this->get_logger(), "Obstacle Count: %ld", obstacle_list.size());
+    // RCLCPP_INFO(this->get_logger(), "Obstacle Count: %ld", obstacle_list.size());
 
     // Publish obstacle locations based on detected circles
     publish_obstacles();
@@ -220,7 +223,6 @@ private:
 
         // Calculate z_bar, average of z_i
         z_bar = z_bar / group.size();
-        RCLCPP_INFO(this->get_logger(), "z_bar: %f", z_bar);
 
         // Fill out constraint matrix and inverse
         constraint_matrix.at(0, 0) = 8. * z_bar;
@@ -287,11 +289,6 @@ private:
         double b = -0.5 * A3 / A1;
         double rad = sqrt((pow(A2, 2) + pow(A3, 2) - (4. * A1 * A4)) / (4. * pow(A1, 2)));
 
-
-        RCLCPP_INFO(this->get_logger(), "a: %f", a);
-        RCLCPP_INFO(this->get_logger(), "b: %f", b);
-        RCLCPP_INFO(this->get_logger(), "rad: %f", rad);
-
         // Create obstacle Circle2D object and add obstacle to obstacle list
         turtlelib::Circle2D obstacle;
         obstacle.x = a + center.x;
@@ -303,7 +300,7 @@ private:
   }
 
   /// @brief Checks if group of points is a circle
-  /// @param group group of Point2D points from a laser scan
+  /// @param group (std::vector<turtlelib::Point2D>)group of Point2D points from a laser scan
   /// @return true if points are circle, false if not
   bool circle_check(std::vector<turtlelib::Point2D> group)
   {
@@ -352,8 +349,8 @@ private:
   }
 
   /// @brief  Converts polar coordinates to a point
-  /// @param angle The angle of the polar coordinates
-  /// @param rad The radius of the polar coordinates
+  /// @param angle (double)The angle of the polar coordinates
+  /// @param rad (double) The radius of the polar coordinates
   /// @return point in Point2D
   turtlelib::Point2D polar_to_cart(double angle, double rad)
   {
