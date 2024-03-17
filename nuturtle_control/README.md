@@ -20,7 +20,7 @@ To launch the odometry and control nodes, use `ros2 launch nuturtle_control star
 ## Testing on the Real TurtleBot
 Below is a video of testing this package. After starting the launch file with `cmd_src:=circle`, the robot starts driving in a circle. By calling the reverse service, the robot begins reversing. Finally, I use teleop control to drive the robot back to the starting position
 
-<iframe width="800" height="450" src="https://www.youtube.com/embed/JjyP8bdBT1g?si=lRUmbJy-m2rO0yMx" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+[![LINK TO YOUTUBE](https://img.youtube.com/vi/JjyP8bdBT1g/maxresdefault.jpg)](https://www.youtube.com/watch?v=JjyP8bdBT1g)
 
 After driving the robot, I recorded the offset reported by ROS between the blue robot frame and the odom frame. This odometry error when using just the wheel encoders to localize. It is close to the true position of the robot, but there is error. 
 
