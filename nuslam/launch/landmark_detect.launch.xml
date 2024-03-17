@@ -1,11 +1,11 @@
 <launch>
-  <arg name="cmd_src" default="none"/>
+  <arg name="cmd_src" default="teleop"/>
   <arg name="robot" default="nusim"/>
   <arg name="use_rviz" default="true"/>
 
   <!-- Launch slam launch file -->
   <include file="$(find-pkg-share nuslam)/launch/slam.launch.xml" if="$(eval '\'$(var robot)\' != \'none\'')">
-    <arg name="use_rviz" value="false"/>
+    <arg name="use_rviz" value="true"/>
     <arg name="use_lidar" value="true"/>
     <arg name="cmd_src" value="$(var cmd_src)"/>
     <arg name="robot" value="$(var robot)"/>
@@ -13,15 +13,5 @@
 
   <!-- Launch landmark detection node -->
   <node pkg="nuslam" exec="landmarks"/>
-
-  <!-- Launch RViz if robot==nusim  -->
-  <node pkg="rviz2" exec="rviz2"
-    if="$(eval '\'$(var robot)\' == \'nusim\' and \'$(var use_rviz)\' == \'true\'')"
-    args="-d $(find-pkg-share nuslam)/config/slam.rviz"/>
-
-  <!-- Launch RViz if robot==none  -->
-  <node pkg="rviz2" exec="rviz2"
-    if="$(eval '\'$(var robot)\' == \'none\' and \'$(var use_rviz)\' == \'true\'')"
-    args="-d $(find-pkg-share nuslam)/config/slam.rviz"/>
 
 </launch>
